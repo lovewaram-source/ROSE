@@ -40,7 +40,12 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "dsnot", "rose", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "dsnot", "rose", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
+    parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
+    parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
+    parser.add_argument("--slice_step_ratio", type=float, default=0.01, help="Budget allocation step as a fraction of each slice.")
+    parser.add_argument("--slice_verbose", action="store_true", help="Print the allocated SparseGPTSlice sparsity range for every pruned sublayer.")
     
     parser.add_argument("--tasks", type=str, nargs="+", default=["winogrande","boolq","piqa","openbookqa","hellaswag","arc_easy","arc_challenge"], help="List of evaluation tasks.")
     parser.add_argument("--eval_zero_shot", action="store_true", help="Enable zero-shot evaluation mode.")
@@ -51,6 +56,31 @@ def main():
 
     args = parser.parse_args()
     # logger = Logger(args, overwrite_print=True)  
+
+    if not 0.0 <= args.sparsity_ratio < 1.0:
+        parser.error("--sparsity_ratio must satisfy 0 <= value < 1")
+    if args.prune_method == "sparsegpt_slice":
+        if args.sparsity_type != "unstructured":
+            parser.error("sparsegpt_slice currently supports only unstructured sparsity")
+        if args.slice_size <= 0:
+            parser.error("--slice_size must be a positive integer")
+        if not 0.0 < args.slice_step_ratio <= 1.0:
+            parser.error("--slice_step_ratio must satisfy 0 < value <= 1")
+
+        effective_min = (
+            max(0.0, args.sparsity_ratio - 0.15)
+            if args.slice_min_ratio is None
+            else args.slice_min_ratio
+        )
+        effective_max = (
+            min(1.0, args.sparsity_ratio + 0.15)
+            if args.slice_max_ratio is None
+            else args.slice_max_ratio
+        )
+        if not 0.0 <= effective_min <= args.sparsity_ratio:
+            parser.error("--slice_min_ratio must be between 0 and --sparsity_ratio")
+        if not args.sparsity_ratio <= effective_max <= 1.0:
+            parser.error("--slice_max_ratio must be between --sparsity_ratio and 1")
 
     np.random.seed(args.seed)
     torch.random.manual_seed(args.seed)
@@ -67,7 +97,7 @@ def main():
     model.eval()    
     device = torch.device("cuda")
 
-    if args.prune_method != "dense" or args.sparsity_ratio == 0:
+    if args.prune_method != "dense" and args.sparsity_ratio > 0:
         print("pruning starts")
         prune_model(args, model, tokenizer, device, prune_n=prune_n, prune_m=prune_m)
     else:

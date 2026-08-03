@@ -4,6 +4,7 @@ import torch.nn as nn
 from .prune_zoo.wanda import Wanda
 from .prune_zoo.dsnot import DSnoT
 from .prune_zoo.sparsegpt import SparseGPT
+from .prune_zoo.sparsegpt_slice import SparseGPTSlice
 from .prune_zoo.rose import ROSE
 from .utils import find_layers
 from .data import get_loaders
@@ -134,6 +135,8 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         prune_fn = prune_wanda
     elif args.prune_method in ["sparsegpt", "rose"]:
         prune_fn = prune_sparsegpt
+    elif args.prune_method == "sparsegpt_slice":
+        prune_fn = prune_sparsegpt_slice
     elif args.prune_method == "dsnot":
         prune_fn = prune_dsnot
     else:
@@ -152,6 +155,15 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 wrapped_layers[name] = Wanda(subset[name])
             elif args.prune_method == "sparsegpt":
                 wrapped_layers[name] = SparseGPT(subset[name])
+            elif args.prune_method == "sparsegpt_slice":
+                wrapped_layers[name] = SparseGPTSlice(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    verbose=args.slice_verbose,
+                )
             elif args.prune_method == "dsnot":
                 wrapped_layers[name] = DSnoT(subset[name], layer_name=name)
             elif args.prune_method == "rose":
@@ -160,7 +172,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 raise ValueError("Invalid prune_method during wrapping")
 
         handles = []
-        if args.prune_method in ["wanda", "sparsegpt", "rose", "dsnot"]:
+        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose", "dsnot"]:
             def add_batch(name):
                 def tmp(_, inp, out):
                     wrapped_layers[name].add_batch(inp[0].data, out.data)
@@ -296,5 +308,20 @@ def prune_dsnot(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
         skip_layer="mlp",
         skip_sub_layer="no_skip",
         without_same_sign=True,
+    )
+    wrapped_layer.free()
+
+
+def prune_sparsegpt_slice(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
+    """SparseGPT pruning with dynamically allocated per-slice sparsity."""
+    if wrapped_layer is None:
+        raise ValueError("wrapped_layer required for SparseGPTSlice")
+
+    wrapped_layer.fasterprune(
+        sparsity_ratio,
+        prune_n=prune_n,
+        prune_m=prune_m,
+        percdamp=0.01,
+        blocksize=wrapped_layer.slice_size,
     )
     wrapped_layer.free()
