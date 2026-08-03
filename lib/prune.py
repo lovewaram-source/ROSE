@@ -5,8 +5,11 @@ from .prune_zoo.wanda import Wanda
 from .prune_zoo.dsnot import DSnoT
 from .prune_zoo.sparsegpt import SparseGPT
 from .prune_zoo.sparsegpt_slice import SparseGPTSlice
+from .prune_zoo.sparsegpt_slice_reorder import SparseGPTSliceReorder
 from .prune_zoo.rose_slice import ROSESlice
 from .prune_zoo.rose import ROSE
+from .prune_zoo.rose_dynamic import ROSEDynamic
+from .prune_zoo.ca_rose import CAROSE
 from .prune_zoo.rose_bottomk import ROSEBottomK
 from .prune_zoo.rose_hessian import ROSEHessian
 from .utils import find_layers
@@ -144,10 +147,19 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         prune_fn = prune_wanda
     elif args.prune_method in ["sparsegpt", "rose", "rose_bottomk"]:
         prune_fn = prune_sparsegpt
-    elif args.prune_method in ["sparsegpt_slice", "rose_slice"]:
+    elif args.prune_method in [
+        "sparsegpt_slice",
+        "rose_slice",
+        "sparsegpt_slice_reorder_total",
+        "sparsegpt_slice_reorder_mean",
+    ]:
         prune_fn = prune_sparsegpt_slice
     elif args.prune_method == "rose_hessian":
         prune_fn = prune_rose_hessian
+    elif args.prune_method == "rose_dynamic":
+        prune_fn = prune_rose_dynamic
+    elif args.prune_method == "ca_rose":
+        prune_fn = prune_ca_rose
     elif args.prune_method == "dsnot":
         prune_fn = prune_dsnot
     else:
@@ -184,10 +196,42 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     allocation_step=args.slice_step_ratio,
                     verbose=args.slice_verbose,
                 )
+            elif args.prune_method in [
+                "sparsegpt_slice_reorder_total",
+                "sparsegpt_slice_reorder_mean",
+            ]:
+                wrapped_layers[name] = SparseGPTSliceReorder(
+                    subset[name],
+                    reorder_mode=(
+                        "total"
+                        if args.prune_method.endswith("_total")
+                        else "mean"
+                    ),
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    reorder_threshold=args.slice_reorder_threshold,
+                    verbose=args.slice_reorder_verbose,
+                )
             elif args.prune_method == "dsnot":
                 wrapped_layers[name] = DSnoT(subset[name], layer_name=name)
             elif args.prune_method == "rose":
                 wrapped_layers[name] = ROSE(subset[name])
+            elif args.prune_method == "rose_dynamic":
+                wrapped_layers[name] = ROSEDynamic(
+                    subset[name],
+                    blocksize=args.rose_dynamic_blocksize,
+                    interval=args.rose_dynamic_interval,
+                    verbose=args.rose_dynamic_verbose,
+                )
+            elif args.prune_method == "ca_rose":
+                wrapped_layers[name] = CAROSE(
+                    subset[name],
+                    blocksize=args.ca_rose_blocksize,
+                    interval=args.ca_rose_interval,
+                    verbose=args.ca_rose_verbose,
+                )
             elif args.prune_method == "rose_bottomk":
                 wrapped_layers[name] = ROSEBottomK(
                     subset[name],
@@ -205,7 +249,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 raise ValueError("Invalid prune_method during wrapping")
 
         handles = []
-        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose_slice", "rose", "rose_bottomk", "rose_hessian", "dsnot"]:
+        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "rose", "rose_dynamic", "ca_rose", "rose_bottomk", "rose_hessian", "dsnot"]:
             def add_batch(name):
                 def tmp(_, inp, out):
                     wrapped_layers[name].add_batch(inp[0].data, out.data)
@@ -364,6 +408,36 @@ def prune_rose_hessian(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=
     """ROSE pruning with Hessian-aware column and block ordering."""
     if wrapped_layer is None:
         raise ValueError("wrapped_layer required for ROSEHessian")
+
+    wrapped_layer.fasterprune(
+        sparsity_ratio,
+        prune_n=prune_n,
+        prune_m=prune_m,
+        percdamp=0.01,
+        blocksize=wrapped_layer.blocksize,
+    )
+    wrapped_layer.free()
+
+
+def prune_rose_dynamic(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
+    """ROSE with online re-ranking of remaining blocks."""
+    if wrapped_layer is None:
+        raise ValueError("wrapped_layer required for ROSEDynamic")
+
+    wrapped_layer.fasterprune(
+        sparsity_ratio,
+        prune_n=prune_n,
+        prune_m=prune_m,
+        percdamp=0.01,
+        blocksize=wrapped_layer.blocksize,
+    )
+    wrapped_layer.free()
+
+
+def prune_ca_rose(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
+    """Compensation-aware ROSE with incremental Hessian updates."""
+    if wrapped_layer is None:
+        raise ValueError("wrapped_layer required for CAROSE")
 
     wrapped_layer.fasterprune(
         sparsity_ratio,

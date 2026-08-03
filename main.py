@@ -105,17 +105,25 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "rose_slice", "dsnot", "rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "rose_slice", "dsnot", "rose", "rose_dynamic", "ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
     parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
     parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
     parser.add_argument("--slice_step_ratio", type=float, default=0.01, help="Budget allocation step as a fraction of each slice.")
     parser.add_argument("--slice_verbose", action="store_true", help="Print the allocated SparseGPTSlice sparsity range for every pruned sublayer.")
+    parser.add_argument("--slice_reorder_threshold", type=float, default=0.5, help="Minimum relative Wanda slice-priority range required to activate slice reordering.")
+    parser.add_argument("--slice_reorder_verbose", action="store_true", help="Print SparseGPTSliceReorder allocation and ordering statistics for every pruned sublayer.")
     parser.add_argument("--rose_hessian_blocksize", type=int, default=128, help="Column block size used by ROSEHessian ordering and compensation.")
     parser.add_argument("--rose_hessian_reorder_threshold", type=float, default=0.5, help="Minimum relative block-loss range required to activate ROSEHessian reordering.")
     parser.add_argument("--rose_hessian_verbose", action="store_true", help="Print ROSEHessian ordering statistics for every pruned sublayer.")
     parser.add_argument("--rose_bottomk_reorder_threshold", type=float, default=0.5, help="Minimum relative Wanda block-loss range required to activate ROSEBottomK reordering.")
     parser.add_argument("--rose_bottomk_verbose", action="store_true", help="Print ROSEBottomK ordering statistics for every pruned sublayer.")
+    parser.add_argument("--rose_dynamic_blocksize", type=int, default=128, help="Number of consecutive input columns in each ROSEDynamic block.")
+    parser.add_argument("--rose_dynamic_interval", type=int, default=4, help="Number of blocks pruned before ROSEDynamic re-ranks the remaining blocks.")
+    parser.add_argument("--rose_dynamic_verbose", action="store_true", help="Print ROSEDynamic round and timing statistics.")
+    parser.add_argument("--ca_rose_blocksize", type=int, default=128, help="Number of consecutive input columns in each CA-ROSE block.")
+    parser.add_argument("--ca_rose_interval", type=int, default=4, help="Number of blocks processed before CA-ROSE recomputes residual-loss priorities.")
+    parser.add_argument("--ca_rose_verbose", action="store_true", help="Print CA-ROSE residual-loss, sparsity, and timing statistics.")
 
     parser.add_argument("--calibration_dataset", type=str, default="c4", choices=["c4", "wikitext2", "ptb"], help="Dataset used to collect pruning calibration activations.")
     parser.add_argument("--eval_dataset", type=str, default="wikitext2", choices=["wikitext2", "ptb", "c4"], help="Dataset used for perplexity evaluation.")
@@ -138,7 +146,7 @@ def main():
 
     if not 0.0 <= args.sparsity_ratio < 1.0:
         parser.error("--sparsity_ratio must satisfy 0 <= value < 1")
-    if args.prune_method in ["sparsegpt_slice", "rose_slice"]:
+    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean"]:
         if args.sparsity_type != "unstructured":
             parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
         if args.slice_size <= 0:
@@ -160,6 +168,13 @@ def main():
             parser.error("--slice_min_ratio must be between 0 and --sparsity_ratio")
         if not args.sparsity_ratio <= effective_max <= 1.0:
             parser.error("--slice_max_ratio must be between --sparsity_ratio and 1")
+        if args.prune_method in [
+            "sparsegpt_slice_reorder_total",
+            "sparsegpt_slice_reorder_mean",
+        ] and not 0.0 <= args.slice_reorder_threshold <= 1.0:
+            parser.error(
+                "--slice_reorder_threshold must satisfy 0 <= value <= 1"
+            )
     if args.prune_method == "rose_hessian":
         if args.sparsity_type != "unstructured":
             parser.error("rose_hessian currently supports only unstructured sparsity")
@@ -174,6 +189,20 @@ def main():
             parser.error(
                 "--rose_bottomk_reorder_threshold must satisfy 0 <= value <= 1"
             )
+    if args.prune_method == "rose_dynamic":
+        if args.sparsity_type != "unstructured":
+            parser.error("rose_dynamic currently supports only unstructured sparsity")
+        if args.rose_dynamic_blocksize <= 0:
+            parser.error("--rose_dynamic_blocksize must be a positive integer")
+        if args.rose_dynamic_interval <= 0:
+            parser.error("--rose_dynamic_interval must be a positive integer")
+    if args.prune_method == "ca_rose":
+        if args.sparsity_type != "unstructured":
+            parser.error("ca_rose currently supports only unstructured sparsity")
+        if args.ca_rose_blocksize <= 0:
+            parser.error("--ca_rose_blocksize must be a positive integer")
+        if args.ca_rose_interval <= 0:
+            parser.error("--ca_rose_interval must be a positive integer")
 
     np.random.seed(args.seed)
     torch.random.manual_seed(args.seed)
