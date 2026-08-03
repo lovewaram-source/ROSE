@@ -105,12 +105,15 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "dsnot", "rose", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "dsnot", "rose", "rose_hessian", "dense"], help="Pruning method to apply.")
     parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
     parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
     parser.add_argument("--slice_step_ratio", type=float, default=0.01, help="Budget allocation step as a fraction of each slice.")
     parser.add_argument("--slice_verbose", action="store_true", help="Print the allocated SparseGPTSlice sparsity range for every pruned sublayer.")
+    parser.add_argument("--rose_hessian_blocksize", type=int, default=128, help="Column block size used by ROSEHessian ordering and compensation.")
+    parser.add_argument("--rose_hessian_reorder_threshold", type=float, default=0.5, help="Minimum relative block-loss range required to activate ROSEHessian reordering.")
+    parser.add_argument("--rose_hessian_verbose", action="store_true", help="Print ROSEHessian ordering statistics for every pruned sublayer.")
 
     parser.add_argument("--calibration_dataset", type=str, default="c4", choices=["c4", "wikitext2", "ptb"], help="Dataset used to collect pruning calibration activations.")
     parser.add_argument("--eval_dataset", type=str, default="wikitext2", choices=["wikitext2", "ptb", "c4"], help="Dataset used for perplexity evaluation.")
@@ -155,6 +158,15 @@ def main():
             parser.error("--slice_min_ratio must be between 0 and --sparsity_ratio")
         if not args.sparsity_ratio <= effective_max <= 1.0:
             parser.error("--slice_max_ratio must be between --sparsity_ratio and 1")
+    if args.prune_method == "rose_hessian":
+        if args.sparsity_type != "unstructured":
+            parser.error("rose_hessian currently supports only unstructured sparsity")
+        if args.rose_hessian_blocksize <= 0:
+            parser.error("--rose_hessian_blocksize must be a positive integer")
+        if not 0.0 <= args.rose_hessian_reorder_threshold <= 1.0:
+            parser.error(
+                "--rose_hessian_reorder_threshold must satisfy 0 <= value <= 1"
+            )
 
     np.random.seed(args.seed)
     torch.random.manual_seed(args.seed)

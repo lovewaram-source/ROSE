@@ -151,7 +151,8 @@ class ROSE:
 
             W[:, i2:] -= Err1.matmul(Hinv[i1:i2, i2:])
 
-        torch.cuda.synchronize()
+        if W.is_cuda:
+            torch.cuda.synchronize()
         return W
 
     def fasterprune(self, sparsity, prune_n=0, prune_m=0, blocksize=128, percdamp=0.01):
@@ -231,7 +232,8 @@ class ROSE:
         _, inverse_indices = torch.sort(reordered_indices)
         W_restored = W[:, inverse_indices]
 
-        torch.cuda.synchronize()
+        if W.is_cuda:
+            torch.cuda.synchronize()
 
         if isinstance(self.layer, transformers.Conv1D):
             W = W.t()

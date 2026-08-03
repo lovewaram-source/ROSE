@@ -6,6 +6,7 @@ from .prune_zoo.dsnot import DSnoT
 from .prune_zoo.sparsegpt import SparseGPT
 from .prune_zoo.sparsegpt_slice import SparseGPTSlice
 from .prune_zoo.rose import ROSE
+from .prune_zoo.rose_hessian import ROSEHessian
 from .utils import find_layers
 from .data import get_loaders
 
@@ -143,6 +144,8 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         prune_fn = prune_sparsegpt
     elif args.prune_method == "sparsegpt_slice":
         prune_fn = prune_sparsegpt_slice
+    elif args.prune_method == "rose_hessian":
+        prune_fn = prune_rose_hessian
     elif args.prune_method == "dsnot":
         prune_fn = prune_dsnot
     else:
@@ -174,11 +177,18 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 wrapped_layers[name] = DSnoT(subset[name], layer_name=name)
             elif args.prune_method == "rose":
                 wrapped_layers[name] = ROSE(subset[name])
+            elif args.prune_method == "rose_hessian":
+                wrapped_layers[name] = ROSEHessian(
+                    subset[name],
+                    blocksize=args.rose_hessian_blocksize,
+                    reorder_threshold=args.rose_hessian_reorder_threshold,
+                    verbose=args.rose_hessian_verbose,
+                )
             else:
                 raise ValueError("Invalid prune_method during wrapping")
 
         handles = []
-        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose", "dsnot"]:
+        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose", "rose_hessian", "dsnot"]:
             def add_batch(name):
                 def tmp(_, inp, out):
                     wrapped_layers[name].add_batch(inp[0].data, out.data)
@@ -329,5 +339,20 @@ def prune_sparsegpt_slice(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune
         prune_m=prune_m,
         percdamp=0.01,
         blocksize=wrapped_layer.slice_size,
+    )
+    wrapped_layer.free()
+
+
+def prune_rose_hessian(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
+    """ROSE pruning with Hessian-aware column and block ordering."""
+    if wrapped_layer is None:
+        raise ValueError("wrapped_layer required for ROSEHessian")
+
+    wrapped_layer.fasterprune(
+        sparsity_ratio,
+        prune_n=prune_n,
+        prune_m=prune_m,
+        percdamp=0.01,
+        blocksize=wrapped_layer.blocksize,
     )
     wrapped_layer.free()
