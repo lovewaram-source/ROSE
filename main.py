@@ -105,7 +105,7 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "rose_slice", "dsnot", "rose", "rose_dynamic", "ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "rose_slice", "ca_sparsegpt_slice", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt", "global_budget_gpt", "dynamic_nm", "dsnot", "rose", "rose_dynamic", "ca_rose", "lookahead_rose", "low_rank_ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
     parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
     parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
@@ -124,6 +124,18 @@ def main():
     parser.add_argument("--ca_rose_blocksize", type=int, default=128, help="Number of consecutive input columns in each CA-ROSE block.")
     parser.add_argument("--ca_rose_interval", type=int, default=4, help="Number of blocks processed before CA-ROSE recomputes residual-loss priorities.")
     parser.add_argument("--ca_rose_verbose", action="store_true", help="Print CA-ROSE residual-loss, sparsity, and timing statistics.")
+    parser.add_argument("--ca_slice_interval", type=int, default=4, help="Slices committed per CA-SparseGPT-Slice re-ranking round.")
+    parser.add_argument("--robust_groups", type=int, default=4, help="Calibration groups used to estimate Robust-SliceGPT score uncertainty.")
+    parser.add_argument("--robust_uncertainty_weight", type=float, default=0.5, help="Weight of cross-group score standard deviation in Robust-SliceGPT.")
+    parser.add_argument("--lookahead_candidates", type=int, default=3, help="Top Wanda blocks evaluated by each Lookahead-ROSE step.")
+    parser.add_argument("--low_rank_ca_rank", type=int, default=128, help="Nyström rank used by Low-Rank CA-ROSE.")
+    parser.add_argument("--global_min_ratio", type=float, default=None, help="Minimum sublayer sparsity for Global-Budget-GPT. Defaults to target minus 0.15.")
+    parser.add_argument("--global_max_ratio", type=float, default=None, help="Maximum sublayer sparsity for Global-Budget-GPT. Defaults to target plus 0.15.")
+    parser.add_argument("--global_step_ratio", type=float, default=0.01, help="Marginal allocation step for Global-Budget-GPT.")
+    parser.add_argument("--global_budget_verbose", action="store_true", help="Print Global-Budget-GPT allocation and pruning statistics.")
+    parser.add_argument("--dynamic_nm_blocksize", type=int, default=128, help="Column block size used for Dynamic-N:M ordering; must be divisible by M.")
+    parser.add_argument("--dynamic_nm_interval", type=int, default=4, help="Blocks committed per Dynamic-N:M re-ranking round.")
+    parser.add_argument("--dynamic_nm_verbose", action="store_true", help="Print Dynamic-N:M ordering and timing statistics.")
 
     parser.add_argument("--calibration_dataset", type=str, default="c4", choices=["c4", "wikitext2", "ptb"], help="Dataset used to collect pruning calibration activations.")
     parser.add_argument("--eval_dataset", type=str, default="wikitext2", choices=["wikitext2", "ptb", "c4"], help="Dataset used for perplexity evaluation.")
@@ -146,7 +158,7 @@ def main():
 
     if not 0.0 <= args.sparsity_ratio < 1.0:
         parser.error("--sparsity_ratio must satisfy 0 <= value < 1")
-    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean"]:
+    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "ca_sparsegpt_slice", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt"]:
         if args.sparsity_type != "unstructured":
             parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
         if args.slice_size <= 0:
@@ -175,6 +187,15 @@ def main():
             parser.error(
                 "--slice_reorder_threshold must satisfy 0 <= value <= 1"
             )
+        if args.prune_method == "ca_sparsegpt_slice" and args.ca_slice_interval <= 0:
+            parser.error("--ca_slice_interval must be a positive integer")
+        if args.prune_method == "robust_slicegpt":
+            if args.robust_groups <= 1:
+                parser.error("--robust_groups must be greater than one")
+            if args.nsamples < args.robust_groups:
+                parser.error("--nsamples must be at least --robust_groups")
+            if args.robust_uncertainty_weight < 0:
+                parser.error("--robust_uncertainty_weight must be non-negative")
     if args.prune_method == "rose_hessian":
         if args.sparsity_type != "unstructured":
             parser.error("rose_hessian currently supports only unstructured sparsity")
@@ -196,13 +217,36 @@ def main():
             parser.error("--rose_dynamic_blocksize must be a positive integer")
         if args.rose_dynamic_interval <= 0:
             parser.error("--rose_dynamic_interval must be a positive integer")
-    if args.prune_method == "ca_rose":
+    if args.prune_method in ["ca_rose", "lookahead_rose", "low_rank_ca_rose"]:
         if args.sparsity_type != "unstructured":
-            parser.error("ca_rose currently supports only unstructured sparsity")
+            parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
         if args.ca_rose_blocksize <= 0:
             parser.error("--ca_rose_blocksize must be a positive integer")
         if args.ca_rose_interval <= 0:
             parser.error("--ca_rose_interval must be a positive integer")
+        if args.prune_method == "lookahead_rose" and args.lookahead_candidates <= 0:
+            parser.error("--lookahead_candidates must be a positive integer")
+        if args.prune_method == "low_rank_ca_rose" and args.low_rank_ca_rank <= 0:
+            parser.error("--low_rank_ca_rank must be a positive integer")
+    if args.prune_method == "global_budget_gpt":
+        if args.sparsity_type != "unstructured":
+            parser.error("global_budget_gpt supports only unstructured sparsity")
+        effective_min = max(0.0, args.sparsity_ratio - 0.15) if args.global_min_ratio is None else args.global_min_ratio
+        effective_max = min(1.0, args.sparsity_ratio + 0.15) if args.global_max_ratio is None else args.global_max_ratio
+        if not 0.0 <= effective_min <= args.sparsity_ratio:
+            parser.error("--global_min_ratio must be between 0 and --sparsity_ratio")
+        if not args.sparsity_ratio <= effective_max <= 1.0:
+            parser.error("--global_max_ratio must be between --sparsity_ratio and 1")
+        if not 0.0 < args.global_step_ratio <= 1.0:
+            parser.error("--global_step_ratio must satisfy 0 < value <= 1")
+    if args.prune_method == "dynamic_nm":
+        if args.sparsity_type == "unstructured":
+            parser.error("dynamic_nm requires --sparsity_type 2:4 or 4:8")
+        _, dynamic_m = map(int, args.sparsity_type.split(":"))
+        if args.dynamic_nm_blocksize <= 0 or args.dynamic_nm_blocksize % dynamic_m:
+            parser.error("--dynamic_nm_blocksize must be positive and divisible by M")
+        if args.dynamic_nm_interval <= 0:
+            parser.error("--dynamic_nm_interval must be a positive integer")
 
     np.random.seed(args.seed)
     torch.random.manual_seed(args.seed)

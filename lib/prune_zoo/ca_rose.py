@@ -78,6 +78,32 @@ class CAROSE(ROSEDynamic):
         ranking = torch.argsort(priorities, descending=True).cpu().tolist()
         return ranking, local_column_orders, priorities
 
+    def _build_groups(self, W, H_inverse, sparsity, blocksize):
+        del H_inverse
+        widths = [
+            min(i1 + blocksize, self.columns) - i1
+            for i1 in range(0, self.columns, blocksize)
+        ]
+        budgets, target_k = self._allocate_exact_budgets(
+            self.rows, widths, sparsity
+        )
+        groups = []
+        for group_id, (i1, width, budget) in enumerate(
+            zip(range(0, self.columns, blocksize), widths, budgets)
+        ):
+            groups.append(
+                {
+                    "id": group_id,
+                    "indices": torch.arange(i1, i1 + width, device=self.dev),
+                    "width": width,
+                    "budget": budget,
+                }
+            )
+        return groups, target_k
+
+    def _initial_inverse(self, H):
+        return torch.cholesky_inverse(torch.linalg.cholesky(H))
+
     def fasterprune(
         self,
         sparsity,
@@ -114,31 +140,12 @@ class CAROSE(ROSEDynamic):
         damp = percdamp * torch.mean(torch.diag(H))
         diag = torch.arange(self.columns, device=self.dev)
         H[diag, diag] += damp
-        H_inverse = torch.cholesky_inverse(torch.linalg.cholesky(H))
+        H_inverse = self._initial_inverse(H)
 
-        widths = [
-            min(i1 + blocksize, self.columns) - i1
-            for i1 in range(0, self.columns, blocksize)
-        ]
-        budgets, target_k = self._allocate_exact_budgets(
-            self.rows, widths, sparsity
+        groups, target_k = self._build_groups(
+            W, H_inverse, sparsity, blocksize
         )
         self.last_target_k = target_k
-
-        groups = []
-        for group_id, (i1, width, budget) in enumerate(
-            zip(range(0, self.columns, blocksize), widths, budgets)
-        ):
-            groups.append(
-                {
-                    "id": group_id,
-                    "indices": torch.arange(
-                        i1, i1 + width, device=self.dev
-                    ),
-                    "width": width,
-                    "budget": budget,
-                }
-            )
 
         W_state = W.clone()
         W_result = torch.zeros_like(W)

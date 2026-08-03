@@ -10,10 +10,38 @@ from .prune_zoo.rose_slice import ROSESlice
 from .prune_zoo.rose import ROSE
 from .prune_zoo.rose_dynamic import ROSEDynamic
 from .prune_zoo.ca_rose import CAROSE
+from .prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
+from .prune_zoo.online_slicegpt import OnlineSliceGPT
+from .prune_zoo.robust_slicegpt import RobustSliceGPT
+from .prune_zoo.cluster_sparsegpt import ClusterSparseGPT
+from .prune_zoo.lookahead_rose import LookaheadROSE
+from .prune_zoo.low_rank_ca_rose import LowRankCAROSE
+from .prune_zoo.dynamic_nm import DynamicNM
+from .prune_zoo.global_budget_gpt import (
+    GlobalBudgetSparseGPT,
+    allocate_global_budgets,
+    build_global_profile,
+)
 from .prune_zoo.rose_bottomk import ROSEBottomK
 from .prune_zoo.rose_hessian import ROSEHessian
 from .utils import find_layers
 from .data import get_loaders
+
+
+def _calibration_loader(args, tokenizer):
+    return get_loaders(
+        args.calibration_dataset,
+        nsamples=args.nsamples,
+        seed=args.seed,
+        seqlen=2048,
+        tokenizer=tokenizer,
+        cache_dir=args.dataset_cache_dir or None,
+        offline=args.offline_dataset,
+        c4_train_path=args.c4_train_path or None,
+        c4_validation_path=args.c4_validation_path or None,
+        wikitext_train_path=args.wikitext_train_path or None,
+        wikitext_test_path=args.wikitext_test_path or None,
+    )[0]
 
 
 def prepare_calibration_input(args, model, dataloader, device):
@@ -107,6 +135,87 @@ def prepare_calibration_input(args, model, dataloader, device):
 
 
 @torch.no_grad()
+def _profile_global_budget(
+    args,
+    model,
+    inps,
+    outs,
+    attention_mask,
+    position_embeddings,
+    device,
+):
+    """Run a dense calibration pass and assign exact model-wide budgets."""
+    profiles = []
+    keys = []
+    layers = model.model.layers
+    minimum = (
+        max(0.0, args.sparsity_ratio - 0.15)
+        if args.global_min_ratio is None
+        else args.global_min_ratio
+    )
+    maximum = (
+        min(1.0, args.sparsity_ratio + 0.15)
+        if args.global_max_ratio is None
+        else args.global_max_ratio
+    )
+
+    for layer_index in range(len(layers)):
+        layer = layers[layer_index].to(device)
+        subset = find_layers(layer)
+        wrappers = {name: SparseGPT(module) for name, module in subset.items()}
+
+        def add_batch(name):
+            def hook(_, inp, out):
+                wrappers[name].add_batch(inp[0].data, out.data)
+
+            return hook
+
+        handles = [
+            subset[name].register_forward_hook(add_batch(name)) for name in subset
+        ]
+        for sample in range(args.nsamples):
+            outs[sample] = layer(
+                inps[sample].unsqueeze(0).to(device),
+                attention_mask=attention_mask,
+                position_embeddings=position_embeddings,
+            )[0]
+        for handle in handles:
+            handle.remove()
+
+        for name, wrapper in wrappers.items():
+            profiles.append(
+                build_global_profile(
+                    wrapper,
+                    minimum,
+                    maximum,
+                    args.global_step_ratio,
+                )
+            )
+            keys.append((layer_index, name))
+            wrapper.free()
+
+        inps, outs = outs, inps
+        layers[layer_index] = layer.to("cpu")
+        del layer, wrappers
+        torch.cuda.empty_cache()
+
+    budgets, target = allocate_global_budgets(profiles, args.sparsity_ratio)
+    assignment = dict(zip(keys, budgets))
+    if args.global_budget_verbose:
+        ratios = [
+            budget / profile["size"]
+            for budget, profile in zip(budgets, profiles)
+        ]
+        print(
+            "GlobalBudgetAllocation "
+            f"target={target / sum(p['size'] for p in profiles):.6f} "
+            f"actual_range=[{min(ratios):.6f}, {max(ratios):.6f}] "
+            f"sublayers={len(profiles)}"
+        )
+    return assignment
+
+
+@torch.no_grad()
 def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, prune_m=0):
     """
     Layer-wise pruning pipeline.
@@ -119,19 +228,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
 
     layers = model.model.layers
 
-    dataloader, _ = get_loaders(
-        args.calibration_dataset,
-        nsamples=args.nsamples,
-        seed=args.seed,
-        seqlen=2048,
-        tokenizer=tokenizer,
-        cache_dir=args.dataset_cache_dir or None,
-        offline=args.offline_dataset,
-        c4_train_path=args.c4_train_path or None,
-        c4_validation_path=args.c4_validation_path or None,
-        wikitext_train_path=args.wikitext_train_path or None,
-        wikitext_test_path=args.wikitext_test_path or None,
-    )
+    dataloader = _calibration_loader(args, tokenizer)
     inps, outs, attention_mask, position_embeddings = prepare_calibration_input(
         args, model, dataloader, device
     )
@@ -141,25 +238,60 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
     if isinstance(position_embeddings, tuple):
         position_embeddings = tuple(e.to(device) for e in position_embeddings)
 
+    global_budgets = None
+    if args.prune_method == "global_budget_gpt":
+        global_budgets = _profile_global_budget(
+            args,
+            model,
+            inps,
+            outs,
+            attention_mask,
+            position_embeddings,
+            device,
+        )
+        # The profiling pass propagated dense hidden states through all layers.
+        # Rebuild the original calibration inputs for the actual pruning pass.
+        del inps, outs
+        torch.cuda.empty_cache()
+        dataloader = _calibration_loader(args, tokenizer)
+        inps, outs, attention_mask, position_embeddings = prepare_calibration_input(
+            args, model, dataloader, device
+        )
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(device)
+        if isinstance(position_embeddings, tuple):
+            position_embeddings = tuple(e.to(device) for e in position_embeddings)
+
     if args.prune_method == "magnitude":
         prune_fn = prune_magnitude
     elif args.prune_method == "wanda":
         prune_fn = prune_wanda
-    elif args.prune_method in ["sparsegpt", "rose", "rose_bottomk"]:
+    elif args.prune_method in [
+        "sparsegpt",
+        "rose",
+        "rose_bottomk",
+        "global_budget_gpt",
+    ]:
         prune_fn = prune_sparsegpt
     elif args.prune_method in [
         "sparsegpt_slice",
         "rose_slice",
         "sparsegpt_slice_reorder_total",
         "sparsegpt_slice_reorder_mean",
+        "ca_sparsegpt_slice",
+        "online_slicegpt",
+        "robust_slicegpt",
+        "cluster_sparsegpt",
     ]:
         prune_fn = prune_sparsegpt_slice
     elif args.prune_method == "rose_hessian":
         prune_fn = prune_rose_hessian
     elif args.prune_method == "rose_dynamic":
         prune_fn = prune_rose_dynamic
-    elif args.prune_method == "ca_rose":
+    elif args.prune_method in ["ca_rose", "lookahead_rose", "low_rank_ca_rose"]:
         prune_fn = prune_ca_rose
+    elif args.prune_method == "dynamic_nm":
+        prune_fn = prune_dynamic_nm
     elif args.prune_method == "dsnot":
         prune_fn = prune_dsnot
     else:
@@ -178,6 +310,12 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 wrapped_layers[name] = Wanda(subset[name])
             elif args.prune_method == "sparsegpt":
                 wrapped_layers[name] = SparseGPT(subset[name])
+            elif args.prune_method == "global_budget_gpt":
+                wrapped_layers[name] = GlobalBudgetSparseGPT(
+                    subset[name],
+                    target_k=global_budgets[(i, name)],
+                    verbose=args.global_budget_verbose,
+                )
             elif args.prune_method == "sparsegpt_slice":
                 wrapped_layers[name] = SparseGPTSlice(
                     subset[name],
@@ -189,6 +327,45 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 )
             elif args.prune_method == "rose_slice":
                 wrapped_layers[name] = ROSESlice(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    verbose=args.slice_verbose,
+                )
+            elif args.prune_method == "ca_sparsegpt_slice":
+                wrapped_layers[name] = CASparseGPTSlice(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    interval=args.ca_slice_interval,
+                    verbose=args.slice_verbose,
+                )
+            elif args.prune_method == "online_slicegpt":
+                wrapped_layers[name] = OnlineSliceGPT(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    verbose=args.slice_verbose,
+                )
+            elif args.prune_method == "robust_slicegpt":
+                wrapped_layers[name] = RobustSliceGPT(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    robust_groups=args.robust_groups,
+                    uncertainty_weight=args.robust_uncertainty_weight,
+                    verbose=args.slice_verbose,
+                )
+            elif args.prune_method == "cluster_sparsegpt":
+                wrapped_layers[name] = ClusterSparseGPT(
                     subset[name],
                     slice_size=args.slice_size,
                     min_sparsity=args.slice_min_ratio,
@@ -232,6 +409,28 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     interval=args.ca_rose_interval,
                     verbose=args.ca_rose_verbose,
                 )
+            elif args.prune_method == "lookahead_rose":
+                wrapped_layers[name] = LookaheadROSE(
+                    subset[name],
+                    blocksize=args.ca_rose_blocksize,
+                    candidate_count=args.lookahead_candidates,
+                    verbose=args.ca_rose_verbose,
+                )
+            elif args.prune_method == "low_rank_ca_rose":
+                wrapped_layers[name] = LowRankCAROSE(
+                    subset[name],
+                    blocksize=args.ca_rose_blocksize,
+                    interval=args.ca_rose_interval,
+                    rank=args.low_rank_ca_rank,
+                    verbose=args.ca_rose_verbose,
+                )
+            elif args.prune_method == "dynamic_nm":
+                wrapped_layers[name] = DynamicNM(
+                    subset[name],
+                    blocksize=args.dynamic_nm_blocksize,
+                    interval=args.dynamic_nm_interval,
+                    verbose=args.dynamic_nm_verbose,
+                )
             elif args.prune_method == "rose_bottomk":
                 wrapped_layers[name] = ROSEBottomK(
                     subset[name],
@@ -249,7 +448,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 raise ValueError("Invalid prune_method during wrapping")
 
         handles = []
-        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "rose", "rose_dynamic", "ca_rose", "rose_bottomk", "rose_hessian", "dsnot"]:
+        if args.prune_method != "magnitude":
             def add_batch(name):
                 def tmp(_, inp, out):
                     wrapped_layers[name].add_batch(inp[0].data, out.data)
@@ -438,6 +637,21 @@ def prune_ca_rose(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
     """Compensation-aware ROSE with incremental Hessian updates."""
     if wrapped_layer is None:
         raise ValueError("wrapped_layer required for CAROSE")
+
+    wrapped_layer.fasterprune(
+        sparsity_ratio,
+        prune_n=prune_n,
+        prune_m=prune_m,
+        percdamp=0.01,
+        blocksize=wrapped_layer.blocksize,
+    )
+    wrapped_layer.free()
+
+
+def prune_dynamic_nm(layer, wrapped_layer, sparsity_ratio, prune_n=0, prune_m=0):
+    """Strict N:M pruning with compensation-aware dynamic block ordering."""
+    if wrapped_layer is None:
+        raise ValueError("wrapped_layer required for DynamicNM")
 
     wrapped_layer.fasterprune(
         sparsity_ratio,
