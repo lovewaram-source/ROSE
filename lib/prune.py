@@ -5,6 +5,7 @@ from .prune_zoo.wanda import Wanda
 from .prune_zoo.dsnot import DSnoT
 from .prune_zoo.sparsegpt import SparseGPT
 from .prune_zoo.sparsegpt_slice import SparseGPTSlice
+from .prune_zoo.rose_slice import ROSESlice
 from .prune_zoo.rose import ROSE
 from .prune_zoo.rose_bottomk import ROSEBottomK
 from .prune_zoo.rose_hessian import ROSEHessian
@@ -143,7 +144,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         prune_fn = prune_wanda
     elif args.prune_method in ["sparsegpt", "rose", "rose_bottomk"]:
         prune_fn = prune_sparsegpt
-    elif args.prune_method == "sparsegpt_slice":
+    elif args.prune_method in ["sparsegpt_slice", "rose_slice"]:
         prune_fn = prune_sparsegpt_slice
     elif args.prune_method == "rose_hessian":
         prune_fn = prune_rose_hessian
@@ -174,6 +175,15 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     allocation_step=args.slice_step_ratio,
                     verbose=args.slice_verbose,
                 )
+            elif args.prune_method == "rose_slice":
+                wrapped_layers[name] = ROSESlice(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    verbose=args.slice_verbose,
+                )
             elif args.prune_method == "dsnot":
                 wrapped_layers[name] = DSnoT(subset[name], layer_name=name)
             elif args.prune_method == "rose":
@@ -195,7 +205,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 raise ValueError("Invalid prune_method during wrapping")
 
         handles = []
-        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose", "rose_bottomk", "rose_hessian", "dsnot"]:
+        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose_slice", "rose", "rose_bottomk", "rose_hessian", "dsnot"]:
             def add_batch(name):
                 def tmp(_, inp, out):
                     wrapped_layers[name].add_batch(inp[0].data, out.data)

@@ -30,6 +30,10 @@ class SparseGPTSlice(SparseGPT):
         self.last_slice_budgets = None
         self.last_slice_sparsities = None
 
+    def _allocation_scores(self, W, Hinv, i1, i2):
+        """Return predicted pruning scores used only for slice-budget allocation."""
+        return W[:, i1:i2].pow(2) / torch.diag(Hinv)[i1:i2].reshape(1, -1).pow(2)
+
     def _resolve_sparsity_bounds(self, sparsity):
         min_sparsity = self.min_sparsity
         max_sparsity = self.max_sparsity
@@ -54,8 +58,6 @@ class SparseGPTSlice(SparseGPT):
         """Allocate an exact layer budget using slice marginal pruning losses."""
         min_sparsity, max_sparsity = self._resolve_sparsity_bounds(sparsity)
         target_k = int(round(W.numel() * sparsity))
-        hinv_diag = torch.diag(Hinv)
-
         budgets = []
         max_budgets = []
         slice_sizes = []
@@ -83,7 +85,7 @@ class SparseGPTSlice(SparseGPT):
             if min_k == max_k:
                 continue
 
-            scores = W[:, i1:i2].pow(2) / hinv_diag[i1:i2].reshape(1, -1).pow(2)
+            scores = self._allocation_scores(W, Hinv, i1, i2)
             sorted_scores = torch.sort(scores.flatten()).values
             cumulative = torch.cumsum(sorted_scores, dim=0)
 
@@ -270,7 +272,7 @@ class SparseGPTSlice(SparseGPT):
         if self.verbose:
             ratios = self.last_slice_sparsities
             print(
-                "SparseGPTSlice "
+                f"{self.__class__.__name__} "
                 f"target={target_k / self.layer.weight.numel():.6f} "
                 f"bounds=[{min_sparsity:.6f}, {max_sparsity:.6f}] "
                 f"actual_range=[{min(ratios):.6f}, {max(ratios):.6f}] "

@@ -105,7 +105,7 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "dsnot", "rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "rose_slice", "dsnot", "rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
     parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
     parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
@@ -138,9 +138,9 @@ def main():
 
     if not 0.0 <= args.sparsity_ratio < 1.0:
         parser.error("--sparsity_ratio must satisfy 0 <= value < 1")
-    if args.prune_method == "sparsegpt_slice":
+    if args.prune_method in ["sparsegpt_slice", "rose_slice"]:
         if args.sparsity_type != "unstructured":
-            parser.error("sparsegpt_slice currently supports only unstructured sparsity")
+            parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
         if args.slice_size <= 0:
             parser.error("--slice_size must be a positive integer")
         if not 0.0 < args.slice_step_ratio <= 1.0:
