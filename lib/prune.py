@@ -6,6 +6,7 @@ from .prune_zoo.dsnot import DSnoT
 from .prune_zoo.sparsegpt import SparseGPT
 from .prune_zoo.sparsegpt_slice import SparseGPTSlice
 from .prune_zoo.rose import ROSE
+from .prune_zoo.rose_bottomk import ROSEBottomK
 from .prune_zoo.rose_hessian import ROSEHessian
 from .utils import find_layers
 from .data import get_loaders
@@ -140,7 +141,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         prune_fn = prune_magnitude
     elif args.prune_method == "wanda":
         prune_fn = prune_wanda
-    elif args.prune_method in ["sparsegpt", "rose"]:
+    elif args.prune_method in ["sparsegpt", "rose", "rose_bottomk"]:
         prune_fn = prune_sparsegpt
     elif args.prune_method == "sparsegpt_slice":
         prune_fn = prune_sparsegpt_slice
@@ -177,6 +178,12 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 wrapped_layers[name] = DSnoT(subset[name], layer_name=name)
             elif args.prune_method == "rose":
                 wrapped_layers[name] = ROSE(subset[name])
+            elif args.prune_method == "rose_bottomk":
+                wrapped_layers[name] = ROSEBottomK(
+                    subset[name],
+                    reorder_threshold=args.rose_bottomk_reorder_threshold,
+                    verbose=args.rose_bottomk_verbose,
+                )
             elif args.prune_method == "rose_hessian":
                 wrapped_layers[name] = ROSEHessian(
                     subset[name],
@@ -188,7 +195,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 raise ValueError("Invalid prune_method during wrapping")
 
         handles = []
-        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose", "rose_hessian", "dsnot"]:
+        if args.prune_method in ["wanda", "sparsegpt", "sparsegpt_slice", "rose", "rose_bottomk", "rose_hessian", "dsnot"]:
             def add_batch(name):
                 def tmp(_, inp, out):
                     wrapped_layers[name].add_batch(inp[0].data, out.data)
