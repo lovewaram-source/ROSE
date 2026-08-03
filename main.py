@@ -46,6 +46,15 @@ def main():
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
     parser.add_argument("--slice_step_ratio", type=float, default=0.01, help="Budget allocation step as a fraction of each slice.")
     parser.add_argument("--slice_verbose", action="store_true", help="Print the allocated SparseGPTSlice sparsity range for every pruned sublayer.")
+
+    parser.add_argument("--calibration_dataset", type=str, default="c4", choices=["c4", "wikitext2", "ptb"], help="Dataset used to collect pruning calibration activations.")
+    parser.add_argument("--eval_dataset", type=str, default="wikitext2", choices=["wikitext2", "ptb", "c4"], help="Dataset used for perplexity evaluation.")
+    parser.add_argument("--dataset_cache_dir", type=str, default="", help="Hugging Face datasets cache directory.")
+    parser.add_argument("--offline_dataset", action="store_true", help="Forbid dataset downloads and use only local files/cache.")
+    parser.add_argument("--c4_train_path", type=str, default="", help="Local C4 train load_from_disk directory or Arrow/Parquet/JSON file.")
+    parser.add_argument("--c4_validation_path", type=str, default="", help="Local C4 validation load_from_disk directory or Arrow/Parquet/JSON file.")
+    parser.add_argument("--wikitext_train_path", type=str, default="", help="Local WikiText2 train load_from_disk directory or Arrow/Parquet/JSON file.")
+    parser.add_argument("--wikitext_test_path", type=str, default="", help="Local WikiText2 test load_from_disk directory or Arrow/Parquet/JSON file.")
     
     parser.add_argument("--tasks", type=str, nargs="+", default=["winogrande","boolq","piqa","openbookqa","hellaswag","arc_easy","arc_challenge"], help="List of evaluation tasks.")
     parser.add_argument("--eval_zero_shot", action="store_true", help="Enable zero-shot evaluation mode.")
@@ -122,8 +131,8 @@ def main():
     # =======================
     os.makedirs("results/ppl", exist_ok=True)
     ppl_filename = f"results/ppl/{model_name}.txt"
-    dataset = 'wikitext2'
-    ppl_wikitext = eval_ppl(model, tokenizer, dataset)
+    dataset = args.eval_dataset
+    ppl_wikitext = eval_ppl(model, tokenizer, dataset, args=args)
 
     col_width = 15
     ppl_header_items = ["Dataset", "Model", "Sparsity", "Method", "PPL"]

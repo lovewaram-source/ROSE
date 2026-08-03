@@ -3,9 +3,25 @@ import torch.nn as nn
 from .data import get_loaders
 
 
-def eval_ppl(model, tokenizer, dataset):
+def eval_ppl(model, tokenizer, dataset, args=None):
     print(f"evaluating on {dataset}")
-    _, testloader = get_loaders(dataset, seed=0, seqlen=model.seqlen, tokenizer=tokenizer)
+    dataset_kwargs = {}
+    if args is not None:
+        dataset_kwargs = {
+            "cache_dir": args.dataset_cache_dir or None,
+            "offline": args.offline_dataset,
+            "c4_train_path": args.c4_train_path or None,
+            "c4_validation_path": args.c4_validation_path or None,
+            "wikitext_train_path": args.wikitext_train_path or None,
+            "wikitext_test_path": args.wikitext_test_path or None,
+        }
+    _, testloader = get_loaders(
+        dataset,
+        seed=0,
+        seqlen=model.seqlen,
+        tokenizer=tokenizer,
+        **dataset_kwargs,
+    )
     with torch.no_grad():
         ppl = eval_ppl_wikitext(model, testloader, 1)
     return ppl 
@@ -51,4 +67,4 @@ def eval_zero_shot(model, tokenizer,args):
     metric_vals['acc_avg'] = round(sum(metric_vals.values()) / len(metric_vals.values()),4)
 
     # print(metric_vals)
-    return metric_vals 
+    return metric_vals

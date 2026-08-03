@@ -114,11 +114,17 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
     layers = model.model.layers
 
     dataloader, _ = get_loaders(
-        "c4",
+        args.calibration_dataset,
         nsamples=args.nsamples,
         seed=args.seed,
         seqlen=2048,
         tokenizer=tokenizer,
+        cache_dir=args.dataset_cache_dir or None,
+        offline=args.offline_dataset,
+        c4_train_path=args.c4_train_path or None,
+        c4_validation_path=args.c4_validation_path or None,
+        wikitext_train_path=args.wikitext_train_path or None,
+        wikitext_test_path=args.wikitext_test_path or None,
     )
     inps, outs, attention_mask, position_embeddings = prepare_calibration_input(
         args, model, dataloader, device
