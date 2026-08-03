@@ -10,13 +10,25 @@ from .rose import ROSE
 class ROSEDynamic(ROSE):
     """ROSE with online block re-ranking after Hessian compensation."""
 
-    def __init__(self, layer, blocksize=128, interval=4, verbose=False):
+    def __init__(
+        self,
+        layer,
+        blocksize=128,
+        interval=4,
+        reorder_threshold=0.0,
+        verbose=False,
+    ):
         super().__init__(layer)
+        if not 0.0 <= reorder_threshold <= 1.0:
+            raise ValueError("rose_dynamic_reorder_threshold must be in [0, 1]")
         self.blocksize = blocksize
         self.interval = interval
+        self.reorder_threshold = reorder_threshold
         self.verbose = verbose
         self.last_group_order = None
         self.last_rounds = None
+        self.last_reorder_score = None
+        self.last_reorder_applied = None
 
     @staticmethod
     def _bottomk_mask(score, k):
@@ -53,7 +65,16 @@ class ROSEDynamic(ROSE):
             column_orders.append(indices[local_order])
 
         priorities = torch.stack(priorities)
-        ranking = torch.argsort(priorities, descending=True).cpu().tolist()
+        scale = priorities.abs().max().clamp_min(torch.finfo(priorities.dtype).eps)
+        relative_range = (priorities.max() - priorities.min()) / scale
+        reordered = bool(relative_range.item() >= self.reorder_threshold)
+        self.last_reorder_score = relative_range.item()
+        self.last_reorder_applied = reordered
+        if reordered:
+            ranking = torch.argsort(priorities, descending=True).cpu().tolist()
+        else:
+            ranking = list(range(len(groups)))
+            column_orders = [group["indices"] for group in groups]
         return ranking, column_orders, priorities
 
     def _prune_selected_prefix(self, W, Hinv, groups):
@@ -196,6 +217,8 @@ class ROSEDynamic(ROSE):
                     f"round={rounds} "
                     f"selected={[group['id'] for group in selected_groups]} "
                     f"priority={[f'{value:.6e}' for value in selected_priority]} "
+                    f"relative_range={self.last_reorder_score:.6f} "
+                    f"reordered={self.last_reorder_applied} "
                     f"remaining={len(next_remaining_groups)}"
                 )
 
@@ -217,6 +240,7 @@ class ROSEDynamic(ROSE):
                 "ROSEDynamic "
                 f"blocksize={blocksize} "
                 f"interval={self.interval} "
+                f"reorder_threshold={self.reorder_threshold:.6f} "
                 f"rounds={rounds} "
                 f"time={time.perf_counter() - tick:.2f}s"
             )

@@ -8,13 +8,20 @@ from .sparsegpt_slice import SparseGPTSlice
 class ClusterSparseGPT(SparseGPTSlice):
     """SparseGPTSlice over Hessian-correlation column clusters."""
 
-    def __init__(self, layer, **kwargs):
+    def __init__(self, layer, cluster_threshold=0.0, **kwargs):
         super().__init__(layer, **kwargs)
+        if not 0.0 <= cluster_threshold <= 1.0:
+            raise ValueError("cluster_reorder_threshold must be in [0, 1]")
+        self.cluster_threshold = cluster_threshold
         self.last_cluster_permutation = None
+        self.last_cluster_coherence = None
+        self.last_clustered = None
 
-    def _cluster_permutation(self, H, cluster_size):
+    def _correlation(self, H):
         diagonal = torch.diag(H).clamp_min(1e-12).sqrt()
-        correlation = torch.abs(H) / diagonal[:, None] / diagonal[None, :]
+        return torch.abs(H) / diagonal[:, None] / diagonal[None, :]
+
+    def _cluster_permutation(self, correlation, cluster_size):
         available = torch.ones(self.columns, dtype=torch.bool, device=self.dev)
         clusters = []
 
@@ -34,9 +41,20 @@ class ClusterSparseGPT(SparseGPTSlice):
         cluster_size = self.slice_size if blocksize is None else blocksize
         if cluster_size <= 0:
             raise ValueError("cluster_size must be positive")
-        permutation = self._cluster_permutation(self.H, cluster_size)
+        correlation = self._correlation(self.H)
+        correlation_no_diag = correlation.clone()
+        correlation_no_diag.fill_diagonal_(0)
+        coherence = correlation_no_diag.max(dim=1).values.mean().item()
+        clustered = coherence >= self.cluster_threshold
+        permutation = (
+            self._cluster_permutation(correlation, cluster_size)
+            if clustered
+            else torch.arange(self.columns, device=self.dev)
+        )
         inverse = torch.argsort(permutation)
         self.last_cluster_permutation = permutation.detach().cpu()
+        self.last_cluster_coherence = coherence
+        self.last_clustered = clustered
 
         weight = self.layer.weight.data.clone()
         if isinstance(self.layer, nn.Conv2d):
@@ -73,3 +91,10 @@ class ClusterSparseGPT(SparseGPTSlice):
                 self.layer.weight.data = original_weight
                 self.H = original_hessian
             self.scaler_row = original_scaler
+        if self.verbose:
+            print(
+                "ClusterSparseGPT "
+                f"coherence={coherence:.6f} "
+                f"threshold={self.cluster_threshold:.6f} "
+                f"clustered={clustered}"
+            )

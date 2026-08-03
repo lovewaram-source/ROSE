@@ -81,5 +81,23 @@ class LookaheadROSE(CAROSE):
                 offset += width
             priorities[position] = -objective
 
-        ranking = torch.argsort(priorities, descending=True).cpu().tolist()
-        return ranking, column_orders, -priorities
+        candidate_objectives = -priorities[candidate_positions]
+        scale = candidate_objectives.abs().max().clamp_min(
+            torch.finfo(candidate_objectives.dtype).eps
+        )
+        relative_range = (
+            candidate_objectives.max() - candidate_objectives.min()
+        ) / scale
+        reordered = bool(relative_range.item() >= self.reorder_threshold)
+        self.last_reorder_score = relative_range.item()
+        self.last_reorder_applied = reordered
+        if reordered:
+            ranking = torch.argsort(priorities, descending=True).cpu().tolist()
+        else:
+            ranking = list(range(len(groups)))
+            column_orders = [
+                torch.arange(group["width"], device=self.dev) for group in groups
+            ]
+        reported_objectives = -priorities
+        reported_objectives[~torch.isfinite(reported_objectives)] = 0
+        return ranking, column_orders, reported_objectives

@@ -15,12 +15,14 @@ class CASparseGPTSlice(CAROSE):
         max_sparsity=None,
         allocation_step=0.01,
         interval=4,
+        reorder_threshold=0.0,
         verbose=False,
     ):
         super().__init__(
             layer,
             blocksize=slice_size,
             interval=interval,
+            reorder_threshold=reorder_threshold,
             verbose=verbose,
         )
         self.slice_size = slice_size

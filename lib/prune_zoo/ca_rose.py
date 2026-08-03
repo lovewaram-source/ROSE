@@ -11,13 +11,25 @@ from .rose_dynamic import ROSEDynamic
 class CAROSE(ROSEDynamic):
     """Compensation-aware ROSE with incremental inverse-Hessian updates."""
 
-    def __init__(self, layer, blocksize=128, interval=4, verbose=False):
+    def __init__(
+        self,
+        layer,
+        blocksize=128,
+        interval=4,
+        reorder_threshold=0.0,
+        verbose=False,
+    ):
         super().__init__(
             layer,
             blocksize=blocksize,
             interval=interval,
             verbose=verbose,
         )
+        if not 0.0 <= reorder_threshold <= 1.0:
+            raise ValueError("ca_rose_reorder_threshold must be in [0, 1]")
+        self.reorder_threshold = reorder_threshold
+        self.last_reorder_score = None
+        self.last_reorder_applied = None
         self.last_target_k = None
 
     @staticmethod
@@ -75,7 +87,18 @@ class CAROSE(ROSEDynamic):
             offset = i2
 
         priorities = torch.stack(priorities)
-        ranking = torch.argsort(priorities, descending=True).cpu().tolist()
+        scale = priorities.abs().max().clamp_min(torch.finfo(priorities.dtype).eps)
+        relative_range = (priorities.max() - priorities.min()) / scale
+        reorder = bool(relative_range.item() >= self.reorder_threshold)
+        self.last_reorder_score = relative_range.item()
+        self.last_reorder_applied = reorder
+        if reorder:
+            ranking = torch.argsort(priorities, descending=True).cpu().tolist()
+        else:
+            ranking = list(range(len(groups)))
+            local_column_orders = [
+                torch.arange(group["width"], device=self.dev) for group in groups
+            ]
         return ranking, local_column_orders, priorities
 
     def _build_groups(self, W, H_inverse, sparsity, blocksize):
@@ -226,11 +249,18 @@ class CAROSE(ROSEDynamic):
                 selected_priority = [
                     priorities[pos].item() for pos in selected_positions
                 ]
+                reorder_score = (
+                    "N/A"
+                    if self.last_reorder_score is None
+                    else f"{self.last_reorder_score:.6f}"
+                )
                 print(
                     "CAROSERound "
                     f"round={rounds} "
                     f"selected={[group['id'] for group in selected_groups]} "
                     f"residual_loss={[f'{value:.6e}' for value in selected_priority]} "
+                    f"relative_range={reorder_score} "
+                    f"reordered={self.last_reorder_applied} "
                     f"remaining={len(next_remaining_groups)}"
                 )
 
@@ -255,6 +285,7 @@ class CAROSE(ROSEDynamic):
                 f"actual={actual_k / W.numel():.6f} "
                 f"blocksize={blocksize} "
                 f"interval={self.interval} "
+                f"reorder_threshold={self.reorder_threshold:.6f} "
                 f"rounds={rounds} "
                 f"time={time.perf_counter() - tick:.2f}s"
             )

@@ -11,8 +11,11 @@ torch.backends.cudnn.allow_tf32 = False
 
 class ROSE:
     
-    def __init__(self, layer):
+    def __init__(self, layer, reorder_threshold=0.5):
+        if not 0.0 <= reorder_threshold <= 1.0:
+            raise ValueError("rose_reorder_threshold must be in [0, 1]")
         self.layer = layer
+        self.reorder_threshold = reorder_threshold
         self.dev = self.layer.weight.device
         W = layer.weight.data.clone()
 
@@ -207,8 +210,10 @@ class ROSE:
 
         block_loss = self.caculate_block_loss(score, W, blocksize, sparsity, prune_n, prune_m)
 
-        relative_range = (torch.max(block_loss) - torch.min(block_loss)) / torch.max(block_loss)
-        if relative_range > 0.5:
+        relative_range = (torch.max(block_loss) - torch.min(block_loss)) / torch.max(
+            block_loss.abs()
+        ).clamp_min(torch.finfo(block_loss.dtype).eps)
+        if relative_range > self.reorder_threshold:
             reorder_block = self.reorder_block(block_loss, blocksize)
             reordered_indices = reorder_column[reorder_block]
         else:

@@ -120,14 +120,18 @@ def main():
     parser.add_argument("--rose_bottomk_verbose", action="store_true", help="Print ROSEBottomK ordering statistics for every pruned sublayer.")
     parser.add_argument("--rose_dynamic_blocksize", type=int, default=128, help="Number of consecutive input columns in each ROSEDynamic block.")
     parser.add_argument("--rose_dynamic_interval", type=int, default=4, help="Number of blocks pruned before ROSEDynamic re-ranks the remaining blocks.")
+    parser.add_argument("--rose_reorder_threshold", type=float, default=0.5, help="Minimum relative Wanda block-loss range required to activate original ROSE reordering.")
+    parser.add_argument("--rose_dynamic_reorder_threshold", type=float, default=0.0, help="Minimum relative priority range required to activate ROSEDynamic reordering.")
     parser.add_argument("--rose_dynamic_verbose", action="store_true", help="Print ROSEDynamic round and timing statistics.")
     parser.add_argument("--ca_rose_blocksize", type=int, default=128, help="Number of consecutive input columns in each CA-ROSE block.")
     parser.add_argument("--ca_rose_interval", type=int, default=4, help="Number of blocks processed before CA-ROSE recomputes residual-loss priorities.")
+    parser.add_argument("--ca_rose_reorder_threshold", type=float, default=0.0, help="Minimum relative CA-ROSE loss range required to activate block and column reordering.")
     parser.add_argument("--ca_rose_verbose", action="store_true", help="Print CA-ROSE residual-loss, sparsity, and timing statistics.")
     parser.add_argument("--ca_slice_interval", type=int, default=4, help="Slices committed per CA-SparseGPT-Slice re-ranking round.")
     parser.add_argument("--robust_groups", type=int, default=4, help="Calibration groups used to estimate Robust-SliceGPT score uncertainty.")
     parser.add_argument("--robust_uncertainty_weight", type=float, default=0.5, help="Weight of cross-group score standard deviation in Robust-SliceGPT.")
     parser.add_argument("--lookahead_candidates", type=int, default=3, help="Top Wanda blocks evaluated by each Lookahead-ROSE step.")
+    parser.add_argument("--lookahead_reorder_threshold", type=float, default=0.0, help="Minimum relative lookahead-objective range required to activate Lookahead-ROSE reordering.")
     parser.add_argument("--low_rank_ca_rank", type=int, default=128, help="Nyström rank used by Low-Rank CA-ROSE.")
     parser.add_argument("--global_min_ratio", type=float, default=None, help="Minimum sublayer sparsity for Global-Budget-GPT. Defaults to target minus 0.15.")
     parser.add_argument("--global_max_ratio", type=float, default=None, help="Maximum sublayer sparsity for Global-Budget-GPT. Defaults to target plus 0.15.")
@@ -135,7 +139,9 @@ def main():
     parser.add_argument("--global_budget_verbose", action="store_true", help="Print Global-Budget-GPT allocation and pruning statistics.")
     parser.add_argument("--dynamic_nm_blocksize", type=int, default=128, help="Column block size used for Dynamic-N:M ordering; must be divisible by M.")
     parser.add_argument("--dynamic_nm_interval", type=int, default=4, help="Blocks committed per Dynamic-N:M re-ranking round.")
+    parser.add_argument("--dynamic_nm_reorder_threshold", type=float, default=0.0, help="Minimum relative priority range required to activate Dynamic-N:M block reordering.")
     parser.add_argument("--dynamic_nm_verbose", action="store_true", help="Print Dynamic-N:M ordering and timing statistics.")
+    parser.add_argument("--cluster_reorder_threshold", type=float, default=0.0, help="Minimum maximum-correlation coherence required to activate Cluster-SparseGPT clustering.")
 
     parser.add_argument("--calibration_dataset", type=str, default="c4", choices=["c4", "wikitext2", "ptb"], help="Dataset used to collect pruning calibration activations.")
     parser.add_argument("--eval_dataset", type=str, default="wikitext2", choices=["wikitext2", "ptb", "c4"], help="Dataset used for perplexity evaluation.")
@@ -189,6 +195,8 @@ def main():
             )
         if args.prune_method == "ca_sparsegpt_slice" and args.ca_slice_interval <= 0:
             parser.error("--ca_slice_interval must be a positive integer")
+        if args.prune_method == "ca_sparsegpt_slice" and not 0.0 <= args.ca_rose_reorder_threshold <= 1.0:
+            parser.error("--ca_rose_reorder_threshold must satisfy 0 <= value <= 1")
         if args.prune_method == "robust_slicegpt":
             if args.robust_groups <= 1:
                 parser.error("--robust_groups must be greater than one")
@@ -217,6 +225,11 @@ def main():
             parser.error("--rose_dynamic_blocksize must be a positive integer")
         if args.rose_dynamic_interval <= 0:
             parser.error("--rose_dynamic_interval must be a positive integer")
+        if not 0.0 <= args.rose_dynamic_reorder_threshold <= 1.0:
+            parser.error("--rose_dynamic_reorder_threshold must satisfy 0 <= value <= 1")
+    if args.prune_method == "rose":
+        if not 0.0 <= args.rose_reorder_threshold <= 1.0:
+            parser.error("--rose_reorder_threshold must satisfy 0 <= value <= 1")
     if args.prune_method in ["ca_rose", "lookahead_rose", "low_rank_ca_rose"]:
         if args.sparsity_type != "unstructured":
             parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
@@ -224,8 +237,12 @@ def main():
             parser.error("--ca_rose_blocksize must be a positive integer")
         if args.ca_rose_interval <= 0:
             parser.error("--ca_rose_interval must be a positive integer")
+        if not 0.0 <= args.ca_rose_reorder_threshold <= 1.0:
+            parser.error("--ca_rose_reorder_threshold must satisfy 0 <= value <= 1")
         if args.prune_method == "lookahead_rose" and args.lookahead_candidates <= 0:
             parser.error("--lookahead_candidates must be a positive integer")
+        if args.prune_method == "lookahead_rose" and not 0.0 <= args.lookahead_reorder_threshold <= 1.0:
+            parser.error("--lookahead_reorder_threshold must satisfy 0 <= value <= 1")
         if args.prune_method == "low_rank_ca_rose" and args.low_rank_ca_rank <= 0:
             parser.error("--low_rank_ca_rank must be a positive integer")
     if args.prune_method == "global_budget_gpt":
@@ -247,6 +264,11 @@ def main():
             parser.error("--dynamic_nm_blocksize must be positive and divisible by M")
         if args.dynamic_nm_interval <= 0:
             parser.error("--dynamic_nm_interval must be a positive integer")
+        if not 0.0 <= args.dynamic_nm_reorder_threshold <= 1.0:
+            parser.error("--dynamic_nm_reorder_threshold must satisfy 0 <= value <= 1")
+    if args.prune_method == "cluster_sparsegpt":
+        if not 0.0 <= args.cluster_reorder_threshold <= 1.0:
+            parser.error("--cluster_reorder_threshold must satisfy 0 <= value <= 1")
 
     np.random.seed(args.seed)
     torch.random.manual_seed(args.seed)

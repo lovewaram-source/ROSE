@@ -342,6 +342,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     max_sparsity=args.slice_max_ratio,
                     allocation_step=args.slice_step_ratio,
                     interval=args.ca_slice_interval,
+                    reorder_threshold=args.ca_rose_reorder_threshold,
                     verbose=args.slice_verbose,
                 )
             elif args.prune_method == "online_slicegpt":
@@ -371,6 +372,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     min_sparsity=args.slice_min_ratio,
                     max_sparsity=args.slice_max_ratio,
                     allocation_step=args.slice_step_ratio,
+                    cluster_threshold=args.cluster_reorder_threshold,
                     verbose=args.slice_verbose,
                 )
             elif args.prune_method in [
@@ -394,12 +396,16 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
             elif args.prune_method == "dsnot":
                 wrapped_layers[name] = DSnoT(subset[name], layer_name=name)
             elif args.prune_method == "rose":
-                wrapped_layers[name] = ROSE(subset[name])
+                wrapped_layers[name] = ROSE(
+                    subset[name],
+                    reorder_threshold=args.rose_reorder_threshold,
+                )
             elif args.prune_method == "rose_dynamic":
                 wrapped_layers[name] = ROSEDynamic(
                     subset[name],
                     blocksize=args.rose_dynamic_blocksize,
                     interval=args.rose_dynamic_interval,
+                    reorder_threshold=args.rose_dynamic_reorder_threshold,
                     verbose=args.rose_dynamic_verbose,
                 )
             elif args.prune_method == "ca_rose":
@@ -407,6 +413,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     subset[name],
                     blocksize=args.ca_rose_blocksize,
                     interval=args.ca_rose_interval,
+                    reorder_threshold=args.ca_rose_reorder_threshold,
                     verbose=args.ca_rose_verbose,
                 )
             elif args.prune_method == "lookahead_rose":
@@ -414,6 +421,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     subset[name],
                     blocksize=args.ca_rose_blocksize,
                     candidate_count=args.lookahead_candidates,
+                    reorder_threshold=args.lookahead_reorder_threshold,
                     verbose=args.ca_rose_verbose,
                 )
             elif args.prune_method == "low_rank_ca_rose":
@@ -422,6 +430,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     blocksize=args.ca_rose_blocksize,
                     interval=args.ca_rose_interval,
                     rank=args.low_rank_ca_rank,
+                    reorder_threshold=args.ca_rose_reorder_threshold,
                     verbose=args.ca_rose_verbose,
                 )
             elif args.prune_method == "dynamic_nm":
@@ -429,6 +438,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     subset[name],
                     blocksize=args.dynamic_nm_blocksize,
                     interval=args.dynamic_nm_interval,
+                    reorder_threshold=args.dynamic_nm_reorder_threshold,
                     verbose=args.dynamic_nm_verbose,
                 )
             elif args.prune_method == "rose_bottomk":

@@ -2,6 +2,7 @@ import unittest
 import torch
 
 from lib.prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
+from lib.prune_zoo.ca_rose import CAROSE
 from lib.prune_zoo.cluster_sparsegpt import ClusterSparseGPT
 from lib.prune_zoo.dynamic_nm import DynamicNM
 from lib.prune_zoo.global_budget_gpt import (
@@ -13,6 +14,7 @@ from lib.prune_zoo.lookahead_rose import LookaheadROSE
 from lib.prune_zoo.low_rank_ca_rose import LowRankCAROSE
 from lib.prune_zoo.online_slicegpt import OnlineSliceGPT
 from lib.prune_zoo.robust_slicegpt import RobustSliceGPT
+from lib.prune_zoo.rose_dynamic import ROSEDynamic
 
 
 def calibrated(pruner_type, **kwargs):
@@ -29,6 +31,10 @@ class ExperimentalPrunerTests(unittest.TestCase):
     def test_unstructured_experimental_pruner_exact_budget(self):
         configurations = [
             (CASparseGPTSlice, {"slice_size": 4, "interval": 2}),
+            (
+                CAROSE,
+                {"blocksize": 4, "interval": 2, "reorder_threshold": 0.25},
+            ),
             (OnlineSliceGPT, {"slice_size": 4}),
             (
                 RobustSliceGPT,
@@ -38,8 +44,22 @@ class ExperimentalPrunerTests(unittest.TestCase):
                     "uncertainty_weight": 0.5,
                 },
             ),
-            (ClusterSparseGPT, {"slice_size": 4}),
-            (LookaheadROSE, {"blocksize": 4, "candidate_count": 2}),
+            (
+                ClusterSparseGPT,
+                {"slice_size": 4, "cluster_threshold": 0.25},
+            ),
+            (
+                ROSEDynamic,
+                {"blocksize": 4, "interval": 2, "reorder_threshold": 0.25},
+            ),
+            (
+                LookaheadROSE,
+                {
+                    "blocksize": 4,
+                    "candidate_count": 2,
+                    "reorder_threshold": 0.25,
+                },
+            ),
             (LowRankCAROSE, {"blocksize": 4, "interval": 2, "rank": 4}),
         ]
         for pruner_type, kwargs in configurations:
@@ -68,7 +88,9 @@ class ExperimentalPrunerTests(unittest.TestCase):
         )
         self.assertEqual(actual, target)
     def test_dynamic_nm_preserves_every_physical_group(self):
-        layer, pruner = calibrated(DynamicNM, blocksize=8, interval=1)
+        layer, pruner = calibrated(
+            DynamicNM, blocksize=8, interval=1, reorder_threshold=0.25
+        )
         pruner.fasterprune(0.5, prune_n=2, prune_m=4, blocksize=8)
         mask = (layer.weight == 0).reshape(8, 4, 4)
         self.assertTrue(torch.all(mask.sum(dim=2) == 2))

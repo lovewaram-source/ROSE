@@ -8,9 +8,20 @@ from .ca_rose import CAROSE
 class DynamicNM(CAROSE):
     """Dynamic block ordering with strict N:M masks in original column groups."""
 
-    def __init__(self, layer, blocksize=128, interval=4, verbose=False):
+    def __init__(
+        self,
+        layer,
+        blocksize=128,
+        interval=4,
+        reorder_threshold=0.0,
+        verbose=False,
+    ):
         super().__init__(
-            layer, blocksize=blocksize, interval=interval, verbose=verbose
+            layer,
+            blocksize=blocksize,
+            interval=interval,
+            reorder_threshold=reorder_threshold,
+            verbose=verbose,
         )
         self.prune_n = None
         self.prune_m = None
@@ -62,7 +73,16 @@ class DynamicNM(CAROSE):
             # Keep physical M-tuples intact; only whole blocks are reordered.
             column_orders.append(torch.arange(group["width"], device=self.dev))
         priorities = torch.stack(priorities)
-        ranking = torch.argsort(priorities, descending=True).cpu().tolist()
+        scale = priorities.abs().max().clamp_min(torch.finfo(priorities.dtype).eps)
+        relative_range = (priorities.max() - priorities.min()) / scale
+        reordered = bool(relative_range.item() >= self.reorder_threshold)
+        self.last_reorder_score = relative_range.item()
+        self.last_reorder_applied = reordered
+        ranking = (
+            torch.argsort(priorities, descending=True).cpu().tolist()
+            if reordered
+            else list(range(len(groups)))
+        )
         return ranking, column_orders, priorities
 
     def _prune_selected_prefix(self, W, Hinv, groups):
