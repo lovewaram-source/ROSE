@@ -219,6 +219,7 @@ def main():
     parser.add_argument("--c4_validation_path", type=str, default="", help="Local C4 validation load_from_disk directory or Arrow/Parquet/JSON file.")
     parser.add_argument("--wikitext_train_path", type=str, default="", help="Local WikiText2 train load_from_disk directory or Arrow/Parquet/JSON file.")
     parser.add_argument("--wikitext_test_path", type=str, default="", help="Local WikiText2 test load_from_disk directory or Arrow/Parquet/JSON file.")
+    parser.add_argument("--ppl_result_dir", type=str, default="results/ppl_new", help="Directory used to save the aligned PPL result table.")
     
     parser.add_argument("--tasks", type=str, nargs="+", default=["winogrande","boolq","piqa","openbookqa","hellaswag","arc_easy","arc_challenge"], help="List of evaluation tasks.")
     parser.add_argument("--eval_zero_shot", action="store_true", help="Enable zero-shot evaluation mode.")
@@ -384,8 +385,8 @@ def main():
     # =======================
     # PPL Evaluation
     # =======================
-    os.makedirs("results/ppl", exist_ok=True)
-    ppl_filename = f"results/ppl/{model_name}.txt"
+    os.makedirs(args.ppl_result_dir, exist_ok=True)
+    ppl_filename = os.path.join(args.ppl_result_dir, f"{model_name}.txt")
     dataset = args.eval_dataset
     ppl_wikitext = eval_ppl(model, tokenizer, dataset, args=args)
     print(f"{dataset} PPL: {ppl_wikitext:.4f}", flush=True)
