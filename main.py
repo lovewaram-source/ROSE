@@ -346,7 +346,7 @@ def main():
         assert args.sparsity_ratio == 0.5, "sparsity ratio must be 0.5 for structured N:M sparsity"
         prune_n, prune_m = map(int, args.sparsity_type.split(":"))
 
-    model_name = args.model_path.split("/")[-1]    
+    model_name = os.path.basename(os.path.normpath(args.model_path))
     print(f"loading llm model {model_name}")
 
     model,tokenizer = get_llm(args.model_path)
@@ -388,6 +388,7 @@ def main():
     ppl_filename = f"results/ppl/{model_name}.txt"
     dataset = args.eval_dataset
     ppl_wikitext = eval_ppl(model, tokenizer, dataset, args=args)
+    print(f"{dataset} PPL: {ppl_wikitext:.4f}", flush=True)
 
     prune_time_text = f"{prune_seconds:.2f}" if prune_seconds is not None else "N/A"
     ppl_data_items = [
@@ -398,7 +399,18 @@ def main():
         f"{ppl_wikitext:.4f}",
         prune_time_text,
     ]
-    append_ppl_result(ppl_filename, ppl_data_items)
+    try:
+        append_ppl_result(ppl_filename, ppl_data_items)
+    except Exception as error:
+        print(
+            f"failed to save PPL result to {os.path.abspath(ppl_filename)}: {error}",
+            flush=True,
+        )
+        raise
+    print(
+        f"PPL result saved to: {os.path.abspath(ppl_filename)}",
+        flush=True,
+    )
 
     # =======================
     # Zero-shot Evaluation
