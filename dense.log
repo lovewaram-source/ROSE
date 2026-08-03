@@ -1,0 +1,42 @@
+loading llm model Meta-Llama-3-8B-Instruct
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 105.41it/s]
+******************************
+layer 0 sparsity 0.000000
+layer 1 sparsity 0.000000
+layer 2 sparsity 0.000000
+layer 3 sparsity 0.000000
+layer 4 sparsity 0.000000
+layer 5 sparsity 0.000000
+layer 6 sparsity 0.000000
+layer 7 sparsity 0.000000
+layer 8 sparsity 0.000000
+layer 9 sparsity 0.000000
+layer 10 sparsity 0.000000
+layer 11 sparsity 0.000000
+layer 12 sparsity 0.000000
+layer 13 sparsity 0.000000
+layer 14 sparsity 0.000000
+layer 15 sparsity 0.000000
+layer 16 sparsity 0.000000
+layer 17 sparsity 0.000000
+layer 18 sparsity 0.000000
+layer 19 sparsity 0.000000
+layer 20 sparsity 0.000000
+layer 21 sparsity 0.000000
+layer 22 sparsity 0.000000
+layer 23 sparsity 0.000000
+layer 24 sparsity 0.000000
+layer 25 sparsity 0.000000
+layer 26 sparsity 0.000000
+layer 27 sparsity 0.000000
+layer 28 sparsity 0.000000
+layer 29 sparsity 0.000000
+layer 30 sparsity 0.000000
+layer 31 sparsity 0.000000
+sparsity sanity check 0.0000
+******************************
+evaluating on wikitext2
+nsamples 141
+sample 0
+sample 50
+sample 100

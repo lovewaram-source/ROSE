@@ -1,0 +1,492 @@
+loading llm model Meta-Llama-3-8B-Instruct
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 107.28it/s]
+pruning starts
+ROSEHessian relative_range=0.820250 threshold=0.500000 reordered=True blocks=32 time=1.06s
+Pruning layer 0 - self_attn.q_proj
+ROSEHessian relative_range=0.802139 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 0 - self_attn.k_proj
+ROSEHessian relative_range=0.637750 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 0 - self_attn.v_proj
+ROSEHessian relative_range=0.995321 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 0 - self_attn.o_proj
+ROSEHessian relative_range=0.549885 threshold=0.500000 reordered=True blocks=32 time=0.65s
+Pruning layer 0 - mlp.gate_proj
+ROSEHessian relative_range=0.545730 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 0 - mlp.up_proj
+ROSEHessian relative_range=0.593148 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 0 - mlp.down_proj
+ROSEHessian relative_range=0.504616 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 1 - self_attn.q_proj
+ROSEHessian relative_range=0.506144 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 1 - self_attn.k_proj
+ROSEHessian relative_range=0.495567 threshold=0.500000 reordered=False blocks=32 time=0.62s
+Pruning layer 1 - self_attn.v_proj
+ROSEHessian relative_range=0.982523 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 1 - self_attn.o_proj
+ROSEHessian relative_range=0.590841 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 1 - mlp.gate_proj
+ROSEHessian relative_range=0.590221 threshold=0.500000 reordered=True blocks=32 time=0.68s
+Pruning layer 1 - mlp.up_proj
+ROSEHessian relative_range=0.142291 threshold=0.500000 reordered=False blocks=112 time=2.44s
+Pruning layer 1 - mlp.down_proj
+ROSEHessian relative_range=0.474215 threshold=0.500000 reordered=False blocks=32 time=0.95s
+Pruning layer 2 - self_attn.q_proj
+ROSEHessian relative_range=0.484677 threshold=0.500000 reordered=False blocks=32 time=0.63s
+Pruning layer 2 - self_attn.k_proj
+ROSEHessian relative_range=0.478299 threshold=0.500000 reordered=False blocks=32 time=0.63s
+Pruning layer 2 - self_attn.v_proj
+ROSEHessian relative_range=0.953160 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 2 - self_attn.o_proj
+ROSEHessian relative_range=0.510871 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 2 - mlp.gate_proj
+ROSEHessian relative_range=0.513164 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 2 - mlp.up_proj
+ROSEHessian relative_range=0.454549 threshold=0.500000 reordered=False blocks=112 time=2.44s
+Pruning layer 2 - mlp.down_proj
+ROSEHessian relative_range=0.453873 threshold=0.500000 reordered=False blocks=32 time=0.94s
+Pruning layer 3 - self_attn.q_proj
+ROSEHessian relative_range=0.449230 threshold=0.500000 reordered=False blocks=32 time=0.64s
+Pruning layer 3 - self_attn.k_proj
+ROSEHessian relative_range=0.457430 threshold=0.500000 reordered=False blocks=32 time=0.63s
+Pruning layer 3 - self_attn.v_proj
+ROSEHessian relative_range=0.947316 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 3 - self_attn.o_proj
+ROSEHessian relative_range=0.489221 threshold=0.500000 reordered=False blocks=32 time=0.64s
+Pruning layer 3 - mlp.gate_proj
+ROSEHessian relative_range=0.489171 threshold=0.500000 reordered=False blocks=32 time=0.64s
+Pruning layer 3 - mlp.up_proj
+ROSEHessian relative_range=0.409463 threshold=0.500000 reordered=False blocks=112 time=2.45s
+Pruning layer 3 - mlp.down_proj
+ROSEHessian relative_range=0.473250 threshold=0.500000 reordered=False blocks=32 time=0.94s
+Pruning layer 4 - self_attn.q_proj
+ROSEHessian relative_range=0.472513 threshold=0.500000 reordered=False blocks=32 time=0.64s
+Pruning layer 4 - self_attn.k_proj
+ROSEHessian relative_range=0.474479 threshold=0.500000 reordered=False blocks=32 time=0.63s
+Pruning layer 4 - self_attn.v_proj
+ROSEHessian relative_range=0.961439 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 4 - self_attn.o_proj
+ROSEHessian relative_range=0.534739 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 4 - mlp.gate_proj
+ROSEHessian relative_range=0.534532 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 4 - mlp.up_proj
+ROSEHessian relative_range=0.495326 threshold=0.500000 reordered=False blocks=112 time=2.44s
+Pruning layer 4 - mlp.down_proj
+ROSEHessian relative_range=0.517803 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 5 - self_attn.q_proj
+ROSEHessian relative_range=0.514001 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 5 - self_attn.k_proj
+ROSEHessian relative_range=0.523061 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 5 - self_attn.v_proj
+ROSEHessian relative_range=0.936969 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 5 - self_attn.o_proj
+ROSEHessian relative_range=0.578591 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 5 - mlp.gate_proj
+ROSEHessian relative_range=0.581888 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 5 - mlp.up_proj
+ROSEHessian relative_range=0.588132 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 5 - mlp.down_proj
+ROSEHessian relative_range=0.544601 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 6 - self_attn.q_proj
+ROSEHessian relative_range=0.526554 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 6 - self_attn.k_proj
+ROSEHessian relative_range=0.559328 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 6 - self_attn.v_proj
+ROSEHessian relative_range=0.886769 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 6 - self_attn.o_proj
+ROSEHessian relative_range=0.585916 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 6 - mlp.gate_proj
+ROSEHessian relative_range=0.588169 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 6 - mlp.up_proj
+ROSEHessian relative_range=0.592400 threshold=0.500000 reordered=True blocks=112 time=2.43s
+Pruning layer 6 - mlp.down_proj
+ROSEHessian relative_range=0.565420 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 7 - self_attn.q_proj
+ROSEHessian relative_range=0.551693 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 7 - self_attn.k_proj
+ROSEHessian relative_range=0.569239 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 7 - self_attn.v_proj
+ROSEHessian relative_range=0.895233 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 7 - self_attn.o_proj
+ROSEHessian relative_range=0.597500 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 7 - mlp.gate_proj
+ROSEHessian relative_range=0.591811 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 7 - mlp.up_proj
+ROSEHessian relative_range=0.589216 threshold=0.500000 reordered=True blocks=112 time=2.43s
+Pruning layer 7 - mlp.down_proj
+ROSEHessian relative_range=0.567248 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 8 - self_attn.q_proj
+ROSEHessian relative_range=0.558330 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 8 - self_attn.k_proj
+ROSEHessian relative_range=0.569609 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 8 - self_attn.v_proj
+ROSEHessian relative_range=0.956021 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 8 - self_attn.o_proj
+ROSEHessian relative_range=0.581948 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 8 - mlp.gate_proj
+ROSEHessian relative_range=0.580657 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 8 - mlp.up_proj
+ROSEHessian relative_range=0.573978 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 8 - mlp.down_proj
+ROSEHessian relative_range=0.567579 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 9 - self_attn.q_proj
+ROSEHessian relative_range=0.562286 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 9 - self_attn.k_proj
+ROSEHessian relative_range=0.576386 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 9 - self_attn.v_proj
+ROSEHessian relative_range=0.889937 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 9 - self_attn.o_proj
+ROSEHessian relative_range=0.593937 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 9 - mlp.gate_proj
+ROSEHessian relative_range=0.589294 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 9 - mlp.up_proj
+ROSEHessian relative_range=0.613556 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 9 - mlp.down_proj
+ROSEHessian relative_range=0.564519 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 10 - self_attn.q_proj
+ROSEHessian relative_range=0.559396 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 10 - self_attn.k_proj
+ROSEHessian relative_range=0.571357 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 10 - self_attn.v_proj
+ROSEHessian relative_range=0.813858 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 10 - self_attn.o_proj
+ROSEHessian relative_range=0.587819 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 10 - mlp.gate_proj
+ROSEHessian relative_range=0.583002 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 10 - mlp.up_proj
+ROSEHessian relative_range=0.622519 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 10 - mlp.down_proj
+ROSEHessian relative_range=0.559480 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 11 - self_attn.q_proj
+ROSEHessian relative_range=0.544082 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 11 - self_attn.k_proj
+ROSEHessian relative_range=0.563860 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 11 - self_attn.v_proj
+ROSEHessian relative_range=0.891192 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 11 - self_attn.o_proj
+ROSEHessian relative_range=0.572953 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 11 - mlp.gate_proj
+ROSEHessian relative_range=0.570116 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 11 - mlp.up_proj
+ROSEHessian relative_range=0.584519 threshold=0.500000 reordered=True blocks=112 time=2.43s
+Pruning layer 11 - mlp.down_proj
+ROSEHessian relative_range=0.557815 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 12 - self_attn.q_proj
+ROSEHessian relative_range=0.546731 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 12 - self_attn.k_proj
+ROSEHessian relative_range=0.566291 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 12 - self_attn.v_proj
+ROSEHessian relative_range=0.893108 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 12 - self_attn.o_proj
+ROSEHessian relative_range=0.570412 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 12 - mlp.gate_proj
+ROSEHessian relative_range=0.569442 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 12 - mlp.up_proj
+ROSEHessian relative_range=0.602596 threshold=0.500000 reordered=True blocks=112 time=2.43s
+Pruning layer 12 - mlp.down_proj
+ROSEHessian relative_range=0.573130 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 13 - self_attn.q_proj
+ROSEHessian relative_range=0.552801 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 13 - self_attn.k_proj
+ROSEHessian relative_range=0.562534 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 13 - self_attn.v_proj
+ROSEHessian relative_range=0.888710 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 13 - self_attn.o_proj
+ROSEHessian relative_range=0.577156 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 13 - mlp.gate_proj
+ROSEHessian relative_range=0.574170 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 13 - mlp.up_proj
+ROSEHessian relative_range=0.591205 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 13 - mlp.down_proj
+ROSEHessian relative_range=0.558720 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 14 - self_attn.q_proj
+ROSEHessian relative_range=0.547944 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 14 - self_attn.k_proj
+ROSEHessian relative_range=0.546372 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 14 - self_attn.v_proj
+ROSEHessian relative_range=0.923073 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 14 - self_attn.o_proj
+ROSEHessian relative_range=0.568550 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 14 - mlp.gate_proj
+ROSEHessian relative_range=0.567424 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 14 - mlp.up_proj
+ROSEHessian relative_range=0.604325 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 14 - mlp.down_proj
+ROSEHessian relative_range=0.561460 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 15 - self_attn.q_proj
+ROSEHessian relative_range=0.544741 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 15 - self_attn.k_proj
+ROSEHessian relative_range=0.544358 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 15 - self_attn.v_proj
+ROSEHessian relative_range=0.903051 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 15 - self_attn.o_proj
+ROSEHessian relative_range=0.588951 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 15 - mlp.gate_proj
+ROSEHessian relative_range=0.587770 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 15 - mlp.up_proj
+ROSEHessian relative_range=0.633731 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 15 - mlp.down_proj
+ROSEHessian relative_range=0.566975 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 16 - self_attn.q_proj
+ROSEHessian relative_range=0.555849 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 16 - self_attn.k_proj
+ROSEHessian relative_range=0.548110 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 16 - self_attn.v_proj
+ROSEHessian relative_range=0.943807 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 16 - self_attn.o_proj
+ROSEHessian relative_range=0.579624 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 16 - mlp.gate_proj
+ROSEHessian relative_range=0.577833 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 16 - mlp.up_proj
+ROSEHessian relative_range=0.630532 threshold=0.500000 reordered=True blocks=112 time=2.43s
+Pruning layer 16 - mlp.down_proj
+ROSEHessian relative_range=0.550757 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 17 - self_attn.q_proj
+ROSEHessian relative_range=0.539064 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 17 - self_attn.k_proj
+ROSEHessian relative_range=0.549037 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 17 - self_attn.v_proj
+ROSEHessian relative_range=0.968900 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 17 - self_attn.o_proj
+ROSEHessian relative_range=0.597653 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 17 - mlp.gate_proj
+ROSEHessian relative_range=0.596588 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 17 - mlp.up_proj
+ROSEHessian relative_range=0.647847 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 17 - mlp.down_proj
+ROSEHessian relative_range=0.569832 threshold=0.500000 reordered=True blocks=32 time=0.97s
+Pruning layer 18 - self_attn.q_proj
+ROSEHessian relative_range=0.557846 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 18 - self_attn.k_proj
+ROSEHessian relative_range=0.556011 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 18 - self_attn.v_proj
+ROSEHessian relative_range=0.985141 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 18 - self_attn.o_proj
+ROSEHessian relative_range=0.601601 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 18 - mlp.gate_proj
+ROSEHessian relative_range=0.603417 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 18 - mlp.up_proj
+ROSEHessian relative_range=0.600941 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 18 - mlp.down_proj
+ROSEHessian relative_range=0.583020 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 19 - self_attn.q_proj
+ROSEHessian relative_range=0.572164 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 19 - self_attn.k_proj
+ROSEHessian relative_range=0.560426 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 19 - self_attn.v_proj
+ROSEHessian relative_range=0.971107 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 19 - self_attn.o_proj
+ROSEHessian relative_range=0.614389 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 19 - mlp.gate_proj
+ROSEHessian relative_range=0.614232 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 19 - mlp.up_proj
+ROSEHessian relative_range=0.597259 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 19 - mlp.down_proj
+ROSEHessian relative_range=0.587077 threshold=0.500000 reordered=True blocks=32 time=0.96s
+Pruning layer 20 - self_attn.q_proj
+ROSEHessian relative_range=0.577702 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 20 - self_attn.k_proj
+ROSEHessian relative_range=0.574408 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 20 - self_attn.v_proj
+ROSEHessian relative_range=0.988083 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 20 - self_attn.o_proj
+ROSEHessian relative_range=0.625657 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 20 - mlp.gate_proj
+ROSEHessian relative_range=0.623668 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 20 - mlp.up_proj
+ROSEHessian relative_range=0.655574 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 20 - mlp.down_proj
+ROSEHessian relative_range=0.599475 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 21 - self_attn.q_proj
+ROSEHessian relative_range=0.583087 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 21 - self_attn.k_proj
+ROSEHessian relative_range=0.587418 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 21 - self_attn.v_proj
+ROSEHessian relative_range=0.963867 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 21 - self_attn.o_proj
+ROSEHessian relative_range=0.635003 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 21 - mlp.gate_proj
+ROSEHessian relative_range=0.635026 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 21 - mlp.up_proj
+ROSEHessian relative_range=0.670588 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 21 - mlp.down_proj
+ROSEHessian relative_range=0.613998 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 22 - self_attn.q_proj
+ROSEHessian relative_range=0.603388 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 22 - self_attn.k_proj
+ROSEHessian relative_range=0.602548 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 22 - self_attn.v_proj
+ROSEHessian relative_range=0.983551 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 22 - self_attn.o_proj
+ROSEHessian relative_range=0.647207 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 22 - mlp.gate_proj
+ROSEHessian relative_range=0.646553 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 22 - mlp.up_proj
+ROSEHessian relative_range=0.654952 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 22 - mlp.down_proj
+ROSEHessian relative_range=0.622936 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 23 - self_attn.q_proj
+ROSEHessian relative_range=0.615759 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 23 - self_attn.k_proj
+ROSEHessian relative_range=0.621184 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 23 - self_attn.v_proj
+ROSEHessian relative_range=0.975273 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 23 - self_attn.o_proj
+ROSEHessian relative_range=0.655595 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 23 - mlp.gate_proj
+ROSEHessian relative_range=0.655465 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 23 - mlp.up_proj
+ROSEHessian relative_range=0.611876 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 23 - mlp.down_proj
+ROSEHessian relative_range=0.623560 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 24 - self_attn.q_proj
+ROSEHessian relative_range=0.618824 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 24 - self_attn.k_proj
+ROSEHessian relative_range=0.621858 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 24 - self_attn.v_proj
+ROSEHessian relative_range=0.987213 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 24 - self_attn.o_proj
+ROSEHessian relative_range=0.662372 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 24 - mlp.gate_proj
+ROSEHessian relative_range=0.664559 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 24 - mlp.up_proj
+ROSEHessian relative_range=0.620887 threshold=0.500000 reordered=True blocks=112 time=2.44s
+Pruning layer 24 - mlp.down_proj
+ROSEHessian relative_range=0.633513 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 25 - self_attn.q_proj
+ROSEHessian relative_range=0.631811 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 25 - self_attn.k_proj
+ROSEHessian relative_range=0.626764 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 25 - self_attn.v_proj
+ROSEHessian relative_range=0.985230 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 25 - self_attn.o_proj
+ROSEHessian relative_range=0.663052 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 25 - mlp.gate_proj
+ROSEHessian relative_range=0.665245 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 25 - mlp.up_proj
+ROSEHessian relative_range=0.615321 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 25 - mlp.down_proj
+ROSEHessian relative_range=0.632135 threshold=0.500000 reordered=True blocks=32 time=0.94s
+Pruning layer 26 - self_attn.q_proj
+ROSEHessian relative_range=0.628355 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 26 - self_attn.k_proj
+ROSEHessian relative_range=0.631734 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 26 - self_attn.v_proj
+ROSEHessian relative_range=0.977165 threshold=0.500000 reordered=True blocks=32 time=0.62s
+Pruning layer 26 - self_attn.o_proj
+ROSEHessian relative_range=0.672920 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 26 - mlp.gate_proj
+ROSEHessian relative_range=0.674732 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 26 - mlp.up_proj
+ROSEHessian relative_range=0.675665 threshold=0.500000 reordered=True blocks=112 time=2.46s
+Pruning layer 26 - mlp.down_proj
+ROSEHessian relative_range=0.646143 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 27 - self_attn.q_proj
+ROSEHessian relative_range=0.645942 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 27 - self_attn.k_proj
+ROSEHessian relative_range=0.647420 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 27 - self_attn.v_proj
+ROSEHessian relative_range=0.991963 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 27 - self_attn.o_proj
+ROSEHessian relative_range=0.680929 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 27 - mlp.gate_proj
+ROSEHessian relative_range=0.682966 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 27 - mlp.up_proj
+ROSEHessian relative_range=0.658897 threshold=0.500000 reordered=True blocks=112 time=2.46s
+Pruning layer 27 - mlp.down_proj
+ROSEHessian relative_range=0.660172 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 28 - self_attn.q_proj
+ROSEHessian relative_range=0.650205 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 28 - self_attn.k_proj
+ROSEHessian relative_range=0.665920 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 28 - self_attn.v_proj
+ROSEHessian relative_range=0.973923 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 28 - self_attn.o_proj
+ROSEHessian relative_range=0.695185 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 28 - mlp.gate_proj
+ROSEHessian relative_range=0.696367 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 28 - mlp.up_proj
+ROSEHessian relative_range=0.675120 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 28 - mlp.down_proj
+ROSEHessian relative_range=0.682724 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 29 - self_attn.q_proj
+ROSEHessian relative_range=0.680034 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 29 - self_attn.k_proj
+ROSEHessian relative_range=0.683387 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 29 - self_attn.v_proj
+ROSEHessian relative_range=0.993197 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 29 - self_attn.o_proj
+ROSEHessian relative_range=0.717857 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 29 - mlp.gate_proj
+ROSEHessian relative_range=0.718758 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 29 - mlp.up_proj
+ROSEHessian relative_range=0.653437 threshold=0.500000 reordered=True blocks=112 time=2.45s
+Pruning layer 29 - mlp.down_proj
+ROSEHessian relative_range=0.698804 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 30 - self_attn.q_proj
+ROSEHessian relative_range=0.697109 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 30 - self_attn.k_proj
+ROSEHessian relative_range=0.705787 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 30 - self_attn.v_proj
+ROSEHessian relative_range=0.970752 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 30 - self_attn.o_proj
+ROSEHessian relative_range=0.733845 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 30 - mlp.gate_proj
+ROSEHessian relative_range=0.735281 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 30 - mlp.up_proj
+ROSEHessian relative_range=0.674279 threshold=0.500000 reordered=True blocks=112 time=2.46s
+Pruning layer 30 - mlp.down_proj
+ROSEHessian relative_range=0.740900 threshold=0.500000 reordered=True blocks=32 time=0.95s
+Pruning layer 31 - self_attn.q_proj
+ROSEHessian relative_range=0.729798 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 31 - self_attn.k_proj
+ROSEHessian relative_range=0.737248 threshold=0.500000 reordered=True blocks=32 time=0.63s
+Pruning layer 31 - self_attn.v_proj
+ROSEHessian relative_range=0.954014 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 31 - self_attn.o_proj
+ROSEHessian relative_range=0.772328 threshold=0.500000 reordered=True blocks=32 time=0.64s
+Pruning layer 31 - mlp.gate_proj
+ROSEHessian relative_range=0.772417 threshold=0.500000 reordered=True blocks=32 time=0.65s
+Pruning layer 31 - mlp.up_proj
+ROSEHessian relative_range=0.514182 threshold=0.500000 reordered=True blocks=112 time=2.47s
+Pruning layer 31 - mlp.down_proj
+total pruning time: 397.16s (6.62min)
+******************************
+layer 0 sparsity 0.700001
+layer 1 sparsity 0.700001
+layer 2 sparsity 0.700001
+layer 3 sparsity 0.700001
+layer 4 sparsity 0.700001
+layer 5 sparsity 0.700001
+layer 6 sparsity 0.700001
+layer 7 sparsity 0.700001
+layer 8 sparsity 0.700001
+layer 9 sparsity 0.700001
+layer 10 sparsity 0.700001
+layer 11 sparsity 0.700001
+layer 12 sparsity 0.700001
+layer 13 sparsity 0.700001
+layer 14 sparsity 0.700001
+layer 15 sparsity 0.700001
+layer 16 sparsity 0.700001
+layer 17 sparsity 0.700001
+layer 18 sparsity 0.700001
+layer 19 sparsity 0.700001
+layer 20 sparsity 0.700001
+layer 21 sparsity 0.700001
+layer 22 sparsity 0.700001
+layer 23 sparsity 0.700001
+layer 24 sparsity 0.700001
+layer 25 sparsity 0.700001
+layer 26 sparsity 0.700001
+layer 27 sparsity 0.700001
+layer 28 sparsity 0.700001
+layer 29 sparsity 0.700001
+layer 30 sparsity 0.700001
+layer 31 sparsity 0.700001
+sparsity sanity check 0.7000
+******************************
+evaluating on wikitext2
+nsamples 141
+sample 0
+sample 50
+sample 100

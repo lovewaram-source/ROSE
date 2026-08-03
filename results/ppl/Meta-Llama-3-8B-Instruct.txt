@@ -1,0 +1,25 @@
+Dataset   | Model                    | Sparsity | Method          |      PPL | PruneTime(s)
+----------+--------------------------+----------+-----------------+----------+-------------
+wikitext2 | Meta-Llama-3-8B-Instruct | 0.0%     | dense           |   8.2880 |          N/A
+wikitext2 | Meta-Llama-3-8B-Instruct | 70.0%    | sparsegpt_slice |  41.6075 |       408.32
+wikitext2 | Meta-Llama-3-8B-Instruct | 70.0%    | sparsegpt       |  45.7374 |       394.75
+wikitext2 | Meta-Llama-3-8B-Instruct | 70.0%    | rose            |  46.7313 |       400.92
+wikitext2 | Meta-Llama-3-8B-Instruct | 70.0%    | rose_hessian    |  45.4494 |       397.16
+wikitext2 | Meta-Llama-3-8B-Instruct | 60.0%    | sparsegpt_slice |  17.3542 |       398.83
+wikitext2 | Meta-Llama-3-8B-Instruct | 60.0%    | sparsegpt       |  17.4081 |       393.45
+wikitext2 | Meta-Llama-3-8B-Instruct | 60.0%    | rose            |  17.2736 |       399.77
+wikitext2 | Meta-Llama-3-8B-Instruct | 60.0%    | rose_hessian    |  17.7156 |       397.78
+wikitext2 | Meta-Llama-3-8B-Instruct | 80.0%    | sparsegpt_slice | 131.1484 |       400.30
+wikitext2 | Meta-Llama-3-8B-Instruct | 80.0%    | sparsegpt       | 150.8673 |       393.68
+wikitext2 | Meta-Llama-3-8B-Instruct | 80.0%    | rose            | 141.7738 |       395.26
+wikitext2 | Meta-Llama-3-8B-Instruct | 80.0%    | rose_hessian    | 153.1582 |       397.58
+wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | sparsegpt_slice |  11.5380 |       398.00
+wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | sparsegpt       |  11.5937 |       393.98
+wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | rose            |  11.5003 |       397.18
+wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | rose_hessian    |  11.3736 |       396.88
+wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | sparsegpt_slice | 255.1028 |       400.36
+wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | sparsegpt       | 273.0038 |       392.63
+wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | rose            | 293.5240 |       397.12
+wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | rose_hessian    | 318.0439 |       395.97
+wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | rose_bottomk    |  11.4914 |       406.84
+wikitext2 | Meta-Llama-3-8B-Instruct | 60.0%    | rose_bottomk    |  17.4255 |       400.85

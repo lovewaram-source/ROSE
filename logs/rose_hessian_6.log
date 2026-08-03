@@ -1,0 +1,268 @@
+loading llm model Meta-Llama-3-8B-Instruct
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 4/4 [00:00<00:00, 105.22it/s]
+pruning starts
+Pruning layer 0 - self_attn.q_proj
+Pruning layer 0 - self_attn.k_proj
+Pruning layer 0 - self_attn.v_proj
+Pruning layer 0 - self_attn.o_proj
+Pruning layer 0 - mlp.gate_proj
+Pruning layer 0 - mlp.up_proj
+Pruning layer 0 - mlp.down_proj
+Pruning layer 1 - self_attn.q_proj
+Pruning layer 1 - self_attn.k_proj
+Pruning layer 1 - self_attn.v_proj
+Pruning layer 1 - self_attn.o_proj
+Pruning layer 1 - mlp.gate_proj
+Pruning layer 1 - mlp.up_proj
+Pruning layer 1 - mlp.down_proj
+Pruning layer 2 - self_attn.q_proj
+Pruning layer 2 - self_attn.k_proj
+Pruning layer 2 - self_attn.v_proj
+Pruning layer 2 - self_attn.o_proj
+Pruning layer 2 - mlp.gate_proj
+Pruning layer 2 - mlp.up_proj
+Pruning layer 2 - mlp.down_proj
+Pruning layer 3 - self_attn.q_proj
+Pruning layer 3 - self_attn.k_proj
+Pruning layer 3 - self_attn.v_proj
+Pruning layer 3 - self_attn.o_proj
+Pruning layer 3 - mlp.gate_proj
+Pruning layer 3 - mlp.up_proj
+Pruning layer 3 - mlp.down_proj
+Pruning layer 4 - self_attn.q_proj
+Pruning layer 4 - self_attn.k_proj
+Pruning layer 4 - self_attn.v_proj
+Pruning layer 4 - self_attn.o_proj
+Pruning layer 4 - mlp.gate_proj
+Pruning layer 4 - mlp.up_proj
+Pruning layer 4 - mlp.down_proj
+Pruning layer 5 - self_attn.q_proj
+Pruning layer 5 - self_attn.k_proj
+Pruning layer 5 - self_attn.v_proj
+Pruning layer 5 - self_attn.o_proj
+Pruning layer 5 - mlp.gate_proj
+Pruning layer 5 - mlp.up_proj
+Pruning layer 5 - mlp.down_proj
+Pruning layer 6 - self_attn.q_proj
+Pruning layer 6 - self_attn.k_proj
+Pruning layer 6 - self_attn.v_proj
+Pruning layer 6 - self_attn.o_proj
+Pruning layer 6 - mlp.gate_proj
+Pruning layer 6 - mlp.up_proj
+Pruning layer 6 - mlp.down_proj
+Pruning layer 7 - self_attn.q_proj
+Pruning layer 7 - self_attn.k_proj
+Pruning layer 7 - self_attn.v_proj
+Pruning layer 7 - self_attn.o_proj
+Pruning layer 7 - mlp.gate_proj
+Pruning layer 7 - mlp.up_proj
+Pruning layer 7 - mlp.down_proj
+Pruning layer 8 - self_attn.q_proj
+Pruning layer 8 - self_attn.k_proj
+Pruning layer 8 - self_attn.v_proj
+Pruning layer 8 - self_attn.o_proj
+Pruning layer 8 - mlp.gate_proj
+Pruning layer 8 - mlp.up_proj
+Pruning layer 8 - mlp.down_proj
+Pruning layer 9 - self_attn.q_proj
+Pruning layer 9 - self_attn.k_proj
+Pruning layer 9 - self_attn.v_proj
+Pruning layer 9 - self_attn.o_proj
+Pruning layer 9 - mlp.gate_proj
+Pruning layer 9 - mlp.up_proj
+Pruning layer 9 - mlp.down_proj
+Pruning layer 10 - self_attn.q_proj
+Pruning layer 10 - self_attn.k_proj
+Pruning layer 10 - self_attn.v_proj
+Pruning layer 10 - self_attn.o_proj
+Pruning layer 10 - mlp.gate_proj
+Pruning layer 10 - mlp.up_proj
+Pruning layer 10 - mlp.down_proj
+Pruning layer 11 - self_attn.q_proj
+Pruning layer 11 - self_attn.k_proj
+Pruning layer 11 - self_attn.v_proj
+Pruning layer 11 - self_attn.o_proj
+Pruning layer 11 - mlp.gate_proj
+Pruning layer 11 - mlp.up_proj
+Pruning layer 11 - mlp.down_proj
+Pruning layer 12 - self_attn.q_proj
+Pruning layer 12 - self_attn.k_proj
+Pruning layer 12 - self_attn.v_proj
+Pruning layer 12 - self_attn.o_proj
+Pruning layer 12 - mlp.gate_proj
+Pruning layer 12 - mlp.up_proj
+Pruning layer 12 - mlp.down_proj
+Pruning layer 13 - self_attn.q_proj
+Pruning layer 13 - self_attn.k_proj
+Pruning layer 13 - self_attn.v_proj
+Pruning layer 13 - self_attn.o_proj
+Pruning layer 13 - mlp.gate_proj
+Pruning layer 13 - mlp.up_proj
+Pruning layer 13 - mlp.down_proj
+Pruning layer 14 - self_attn.q_proj
+Pruning layer 14 - self_attn.k_proj
+Pruning layer 14 - self_attn.v_proj
+Pruning layer 14 - self_attn.o_proj
+Pruning layer 14 - mlp.gate_proj
+Pruning layer 14 - mlp.up_proj
+Pruning layer 14 - mlp.down_proj
+Pruning layer 15 - self_attn.q_proj
+Pruning layer 15 - self_attn.k_proj
+Pruning layer 15 - self_attn.v_proj
+Pruning layer 15 - self_attn.o_proj
+Pruning layer 15 - mlp.gate_proj
+Pruning layer 15 - mlp.up_proj
+Pruning layer 15 - mlp.down_proj
+Pruning layer 16 - self_attn.q_proj
+Pruning layer 16 - self_attn.k_proj
+Pruning layer 16 - self_attn.v_proj
+Pruning layer 16 - self_attn.o_proj
+Pruning layer 16 - mlp.gate_proj
+Pruning layer 16 - mlp.up_proj
+Pruning layer 16 - mlp.down_proj
+Pruning layer 17 - self_attn.q_proj
+Pruning layer 17 - self_attn.k_proj
+Pruning layer 17 - self_attn.v_proj
+Pruning layer 17 - self_attn.o_proj
+Pruning layer 17 - mlp.gate_proj
+Pruning layer 17 - mlp.up_proj
+Pruning layer 17 - mlp.down_proj
+Pruning layer 18 - self_attn.q_proj
+Pruning layer 18 - self_attn.k_proj
+Pruning layer 18 - self_attn.v_proj
+Pruning layer 18 - self_attn.o_proj
+Pruning layer 18 - mlp.gate_proj
+Pruning layer 18 - mlp.up_proj
+Pruning layer 18 - mlp.down_proj
+Pruning layer 19 - self_attn.q_proj
+Pruning layer 19 - self_attn.k_proj
+Pruning layer 19 - self_attn.v_proj
+Pruning layer 19 - self_attn.o_proj
+Pruning layer 19 - mlp.gate_proj
+Pruning layer 19 - mlp.up_proj
+Pruning layer 19 - mlp.down_proj
+Pruning layer 20 - self_attn.q_proj
+Pruning layer 20 - self_attn.k_proj
+Pruning layer 20 - self_attn.v_proj
+Pruning layer 20 - self_attn.o_proj
+Pruning layer 20 - mlp.gate_proj
+Pruning layer 20 - mlp.up_proj
+Pruning layer 20 - mlp.down_proj
+Pruning layer 21 - self_attn.q_proj
+Pruning layer 21 - self_attn.k_proj
+Pruning layer 21 - self_attn.v_proj
+Pruning layer 21 - self_attn.o_proj
+Pruning layer 21 - mlp.gate_proj
+Pruning layer 21 - mlp.up_proj
+Pruning layer 21 - mlp.down_proj
+Pruning layer 22 - self_attn.q_proj
+Pruning layer 22 - self_attn.k_proj
+Pruning layer 22 - self_attn.v_proj
+Pruning layer 22 - self_attn.o_proj
+Pruning layer 22 - mlp.gate_proj
+Pruning layer 22 - mlp.up_proj
+Pruning layer 22 - mlp.down_proj
+Pruning layer 23 - self_attn.q_proj
+Pruning layer 23 - self_attn.k_proj
+Pruning layer 23 - self_attn.v_proj
+Pruning layer 23 - self_attn.o_proj
+Pruning layer 23 - mlp.gate_proj
+Pruning layer 23 - mlp.up_proj
+Pruning layer 23 - mlp.down_proj
+Pruning layer 24 - self_attn.q_proj
+Pruning layer 24 - self_attn.k_proj
+Pruning layer 24 - self_attn.v_proj
+Pruning layer 24 - self_attn.o_proj
+Pruning layer 24 - mlp.gate_proj
+Pruning layer 24 - mlp.up_proj
+Pruning layer 24 - mlp.down_proj
+Pruning layer 25 - self_attn.q_proj
+Pruning layer 25 - self_attn.k_proj
+Pruning layer 25 - self_attn.v_proj
+Pruning layer 25 - self_attn.o_proj
+Pruning layer 25 - mlp.gate_proj
+Pruning layer 25 - mlp.up_proj
+Pruning layer 25 - mlp.down_proj
+Pruning layer 26 - self_attn.q_proj
+Pruning layer 26 - self_attn.k_proj
+Pruning layer 26 - self_attn.v_proj
+Pruning layer 26 - self_attn.o_proj
+Pruning layer 26 - mlp.gate_proj
+Pruning layer 26 - mlp.up_proj
+Pruning layer 26 - mlp.down_proj
+Pruning layer 27 - self_attn.q_proj
+Pruning layer 27 - self_attn.k_proj
+Pruning layer 27 - self_attn.v_proj
+Pruning layer 27 - self_attn.o_proj
+Pruning layer 27 - mlp.gate_proj
+Pruning layer 27 - mlp.up_proj
+Pruning layer 27 - mlp.down_proj
+Pruning layer 28 - self_attn.q_proj
+Pruning layer 28 - self_attn.k_proj
+Pruning layer 28 - self_attn.v_proj
+Pruning layer 28 - self_attn.o_proj
+Pruning layer 28 - mlp.gate_proj
+Pruning layer 28 - mlp.up_proj
+Pruning layer 28 - mlp.down_proj
+Pruning layer 29 - self_attn.q_proj
+Pruning layer 29 - self_attn.k_proj
+Pruning layer 29 - self_attn.v_proj
+Pruning layer 29 - self_attn.o_proj
+Pruning layer 29 - mlp.gate_proj
+Pruning layer 29 - mlp.up_proj
+Pruning layer 29 - mlp.down_proj
+Pruning layer 30 - self_attn.q_proj
+Pruning layer 30 - self_attn.k_proj
+Pruning layer 30 - self_attn.v_proj
+Pruning layer 30 - self_attn.o_proj
+Pruning layer 30 - mlp.gate_proj
+Pruning layer 30 - mlp.up_proj
+Pruning layer 30 - mlp.down_proj
+Pruning layer 31 - self_attn.q_proj
+Pruning layer 31 - self_attn.k_proj
+Pruning layer 31 - self_attn.v_proj
+Pruning layer 31 - self_attn.o_proj
+Pruning layer 31 - mlp.gate_proj
+Pruning layer 31 - mlp.up_proj
+Pruning layer 31 - mlp.down_proj
+total pruning time: 397.78s (6.63min)
+******************************
+layer 0 sparsity 0.600001
+layer 1 sparsity 0.600001
+layer 2 sparsity 0.600001
+layer 3 sparsity 0.600001
+layer 4 sparsity 0.600001
+layer 5 sparsity 0.600001
+layer 6 sparsity 0.600001
+layer 7 sparsity 0.600001
+layer 8 sparsity 0.600001
+layer 9 sparsity 0.600001
+layer 10 sparsity 0.600001
+layer 11 sparsity 0.600001
+layer 12 sparsity 0.600001
+layer 13 sparsity 0.600001
+layer 14 sparsity 0.600001
+layer 15 sparsity 0.600001
+layer 16 sparsity 0.600001
+layer 17 sparsity 0.600001
+layer 18 sparsity 0.600001
+layer 19 sparsity 0.600001
+layer 20 sparsity 0.600001
+layer 21 sparsity 0.600001
+layer 22 sparsity 0.600001
+layer 23 sparsity 0.600001
+layer 24 sparsity 0.600001
+layer 25 sparsity 0.600001
+layer 26 sparsity 0.600001
+layer 27 sparsity 0.600001
+layer 28 sparsity 0.600001
+layer 29 sparsity 0.600001
+layer 30 sparsity 0.600001
+layer 31 sparsity 0.600001
+sparsity sanity check 0.6000
+******************************
+evaluating on wikitext2
+nsamples 141
+sample 0
+sample 50
+sample 100
