@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import time
 import numpy as np
 import torch
@@ -33,28 +34,67 @@ def get_llm(model_path):
     return model, tokenizer
 
 
-def append_ppl_result(filename, header_items, data_items, col_width=15):
-    """Append a PPL row and upgrade legacy result files with an N/A time column."""
-    header_line = "".join(f"{item:>{col_width}}" for item in header_items)
-    data_line = "".join(f"{item:>{col_width}}" for item in data_items)
+PPL_HEADER = ["Dataset", "Model", "Sparsity", "Method", "PPL", "PruneTime(s)"]
+LEGACY_PPL_ROW = re.compile(
+    r"^\s*(wikitext2|c4|ptb)(.+?)\s+(\d+(?:\.\d+)?%)\s*"
+    r"(\S+?)\s+(\d+(?:\.\d+)?)\s*(N/A|\d+(?:\.\d+)?)?\s*$"
+)
 
-    if os.path.exists(filename) and os.path.getsize(filename) > 0:
-        with open(filename, "r") as f:
-            existing_lines = f.readlines()
 
-        if existing_lines and "PruneTime(s)" not in existing_lines[0]:
-            legacy_rows = existing_lines[2:]
-            with open(filename, "w") as f:
-                f.write(header_line + "\n")
-                f.write("-" * len(header_line) + "\n")
-                for row in legacy_rows:
-                    f.write(row.rstrip() + f"{'N/A':>{col_width}}\n")
+def _read_ppl_rows(filename):
+    if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+        return []
 
-    with open(filename, "a") as f:
-        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-            f.write(header_line + "\n")
-            f.write("-" * len(header_line) + "\n")
-        f.write(data_line + "\n")
+    with open(filename, "r", encoding="utf-8") as f:
+        lines = [line.rstrip("\n") for line in f]
+
+    if lines and "|" in lines[0]:
+        rows = []
+        for line in lines[2:]:
+            if not line.strip():
+                continue
+            fields = [field.strip() for field in line.split("|")]
+            if len(fields) != len(PPL_HEADER):
+                raise ValueError(f"Cannot parse PPL result row: {line}")
+            rows.append(fields)
+        return rows
+
+    rows = []
+    for line in lines[2:]:
+        if not line.strip():
+            continue
+        match = LEGACY_PPL_ROW.match(line)
+        if match is None:
+            raise ValueError(f"Cannot migrate legacy PPL result row: {line}")
+        dataset, model, sparsity, method, ppl, prune_time = match.groups()
+        rows.append([dataset, model.strip(), sparsity, method, ppl, prune_time or "N/A"])
+    return rows
+
+
+def append_ppl_result(filename, data_items):
+    """Append a row and rewrite the PPL result table with compact aligned columns."""
+    rows = _read_ppl_rows(filename)
+    rows.append([str(item) for item in data_items])
+
+    widths = [
+        max(len(header), *(len(row[index]) for row in rows))
+        for index, header in enumerate(PPL_HEADER)
+    ]
+
+    def format_row(row):
+        return " | ".join(
+            f"{value:<{width}}" if index < 4 else f"{value:>{width}}"
+            for index, (value, width) in enumerate(zip(row, widths))
+        )
+
+    header_line = format_row(PPL_HEADER)
+    divider_line = "-+-".join("-" * width for width in widths)
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(header_line + "\n")
+        f.write(divider_line + "\n")
+        for row in rows:
+            f.write(format_row(row) + "\n")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -167,9 +207,7 @@ def main():
     dataset = args.eval_dataset
     ppl_wikitext = eval_ppl(model, tokenizer, dataset, args=args)
 
-    col_width = 15
     prune_time_text = f"{prune_seconds:.2f}" if prune_seconds is not None else "N/A"
-    ppl_header_items = ["Dataset", "Model", "Sparsity", "Method", "PPL", "PruneTime(s)"]
     ppl_data_items = [
         dataset,
         model_name,
@@ -178,7 +216,7 @@ def main():
         f"{ppl_wikitext:.4f}",
         prune_time_text,
     ]
-    append_ppl_result(ppl_filename, ppl_header_items, ppl_data_items, col_width)
+    append_ppl_result(ppl_filename, ppl_data_items)
 
     # =======================
     # Zero-shot Evaluation
