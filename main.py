@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 import numpy as np
 import torch
 from transformers import AutoTokenizer,AutoModelForCausalLM
@@ -30,6 +31,30 @@ def get_llm(model_path):
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path = model_path, use_fast=False,unk_token="<unk>")
     tokenizer.pad_token = tokenizer.eos_token    
     return model, tokenizer
+
+
+def append_ppl_result(filename, header_items, data_items, col_width=15):
+    """Append a PPL row and upgrade legacy result files with an N/A time column."""
+    header_line = "".join(f"{item:>{col_width}}" for item in header_items)
+    data_line = "".join(f"{item:>{col_width}}" for item in data_items)
+
+    if os.path.exists(filename) and os.path.getsize(filename) > 0:
+        with open(filename, "r") as f:
+            existing_lines = f.readlines()
+
+        if existing_lines and "PruneTime(s)" not in existing_lines[0]:
+            legacy_rows = existing_lines[2:]
+            with open(filename, "w") as f:
+                f.write(header_line + "\n")
+                f.write("-" * len(header_line) + "\n")
+                for row in legacy_rows:
+                    f.write(row.rstrip() + f"{'N/A':>{col_width}}\n")
+
+    with open(filename, "a") as f:
+        if not os.path.exists(filename) or os.path.getsize(filename) == 0:
+            f.write(header_line + "\n")
+            f.write("-" * len(header_line) + "\n")
+        f.write(data_line + "\n")
 
 def main():
     parser = argparse.ArgumentParser()
@@ -105,10 +130,18 @@ def main():
     model,tokenizer = get_llm(args.model_path)
     model.eval()    
     device = torch.device("cuda")
+    prune_seconds = None
 
     if args.prune_method != "dense" and args.sparsity_ratio > 0:
         print("pruning starts")
+        if torch.cuda.is_available():
+            torch.cuda.synchronize(device)
+        prune_start = time.perf_counter()
         prune_model(args, model, tokenizer, device, prune_n=prune_n, prune_m=prune_m)
+        if torch.cuda.is_available():
+            torch.cuda.synchronize(device)
+        prune_seconds = time.perf_counter() - prune_start
+        print(f"total pruning time: {prune_seconds:.2f}s ({prune_seconds / 60:.2f}min)")
     else:
         pass
     print("*"*30)
@@ -135,16 +168,17 @@ def main():
     ppl_wikitext = eval_ppl(model, tokenizer, dataset, args=args)
 
     col_width = 15
-    ppl_header_items = ["Dataset", "Model", "Sparsity", "Method", "PPL"]
-    ppl_header_line = "".join(f"{item:>{col_width}}" for item in ppl_header_items)
-    ppl_data_items = [dataset, model_name,f"{args.sparsity_ratio:.1%}",args.prune_method,f"{ppl_wikitext:.4f}"]
-    ppl_data_line = "".join(f"{item:>{col_width}}" for item in ppl_data_items)
-
-    with open(ppl_filename, 'a') as f:
-        if not os.path.exists(ppl_filename) or os.path.getsize(ppl_filename) == 0:
-            f.write(ppl_header_line + "\n")
-            f.write("-" * len(ppl_header_line) + "\n")
-        f.write(ppl_data_line + "\n")
+    prune_time_text = f"{prune_seconds:.2f}" if prune_seconds is not None else "N/A"
+    ppl_header_items = ["Dataset", "Model", "Sparsity", "Method", "PPL", "PruneTime(s)"]
+    ppl_data_items = [
+        dataset,
+        model_name,
+        f"{args.sparsity_ratio:.1%}",
+        args.prune_method,
+        f"{ppl_wikitext:.4f}",
+        prune_time_text,
+    ]
+    append_ppl_result(ppl_filename, ppl_header_items, ppl_data_items, col_width)
 
     # =======================
     # Zero-shot Evaluation
