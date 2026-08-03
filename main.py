@@ -49,11 +49,15 @@ def _read_ppl_rows(filename):
         lines = [line.rstrip("\n") for line in f]
 
     if lines and "|" in lines[0]:
+        source_header = [field.strip() for field in lines[0].split("|")]
         rows = []
         for line in lines[2:]:
             if not line.strip():
                 continue
             fields = [field.strip() for field in line.split("|")]
+            # Recover result files written by the temporary KeyParams format.
+            if len(fields) == len(PPL_HEADER) + 1 and "KeyParams" in source_header:
+                fields.pop(source_header.index("KeyParams"))
             if len(fields) != len(PPL_HEADER):
                 raise ValueError(f"Cannot parse PPL result row: {line}")
             rows.append(fields)
@@ -95,6 +99,70 @@ def append_ppl_result(filename, data_items):
         f.write(divider_line + "\n")
         for row in rows:
             f.write(format_row(row) + "\n")
+
+
+def format_method_label(args):
+    """Keep the six-column table while making experiment settings identifiable."""
+    method = args.prune_method
+    params = [f"n{args.nsamples}"]
+
+    slice_methods = {
+        "sparsegpt_slice",
+        "rose_slice",
+        "ca_sparsegpt_slice",
+        "online_slicegpt",
+        "robust_slicegpt",
+        "cluster_sparsegpt",
+        "sparsegpt_slice_reorder_total",
+        "sparsegpt_slice_reorder_mean",
+    }
+    if method in slice_methods:
+        lower = (
+            max(0.0, args.sparsity_ratio - 0.15)
+            if args.slice_min_ratio is None
+            else args.slice_min_ratio
+        )
+        upper = (
+            min(1.0, args.sparsity_ratio + 0.15)
+            if args.slice_max_ratio is None
+            else args.slice_max_ratio
+        )
+        params.extend(
+            [
+                f"sl{args.slice_size}",
+                f"r{lower:.2f}-{upper:.2f}",
+                f"st{args.slice_step_ratio:.2f}",
+            ]
+        )
+    if method in {"sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean"}:
+        params.append(f"t{args.slice_reorder_threshold:.2f}")
+    elif method == "ca_sparsegpt_slice":
+        params.extend([f"i{args.ca_slice_interval}", f"t{args.ca_rose_reorder_threshold:.2f}"])
+    elif method == "robust_slicegpt":
+        params.extend([f"g{args.robust_groups}", f"u{args.robust_uncertainty_weight:.2f}"])
+    elif method == "cluster_sparsegpt":
+        params.append(f"t{args.cluster_reorder_threshold:.2f}")
+    elif method == "rose":
+        params.append(f"t{args.rose_reorder_threshold:.2f}")
+    elif method == "rose_dynamic":
+        params.extend([f"b{args.rose_dynamic_blocksize}", f"i{args.rose_dynamic_interval}", f"t{args.rose_dynamic_reorder_threshold:.2f}"])
+    elif method in {"ca_rose", "low_rank_ca_rose"}:
+        params.extend([f"b{args.ca_rose_blocksize}", f"i{args.ca_rose_interval}", f"t{args.ca_rose_reorder_threshold:.2f}"])
+        if method == "low_rank_ca_rose":
+            params.append(f"rank{args.low_rank_ca_rank}")
+    elif method == "lookahead_rose":
+        params.extend([f"b{args.ca_rose_blocksize}", f"c{args.lookahead_candidates}", f"t{args.lookahead_reorder_threshold:.2f}"])
+    elif method == "rose_hessian":
+        params.extend([f"b{args.rose_hessian_blocksize}", f"t{args.rose_hessian_reorder_threshold:.2f}"])
+    elif method == "rose_bottomk":
+        params.append(f"t{args.rose_bottomk_reorder_threshold:.2f}")
+    elif method == "global_budget_gpt":
+        lower = max(0.0, args.sparsity_ratio - 0.15) if args.global_min_ratio is None else args.global_min_ratio
+        upper = min(1.0, args.sparsity_ratio + 0.15) if args.global_max_ratio is None else args.global_max_ratio
+        params.extend([f"r{lower:.2f}-{upper:.2f}", f"st{args.global_step_ratio:.2f}"])
+    elif method == "dynamic_nm":
+        params.extend([f"nm{args.sparsity_type}", f"b{args.dynamic_nm_blocksize}", f"i{args.dynamic_nm_interval}", f"t{args.dynamic_nm_reorder_threshold:.2f}"])
+    return f"{method}[{','.join(params)}]"
 
 def main():
     parser = argparse.ArgumentParser()
@@ -326,7 +394,7 @@ def main():
         dataset,
         model_name,
         f"{args.sparsity_ratio:.1%}",
-        args.prune_method,
+        format_method_label(args),
         f"{ppl_wikitext:.4f}",
         prune_time_text,
     ]
