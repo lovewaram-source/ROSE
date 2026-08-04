@@ -183,6 +183,7 @@ def main():
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
     parser.add_argument("--slice_step_ratio", type=float, default=0.01, help="Budget allocation step as a fraction of each slice.")
     parser.add_argument("--slice_verbose", action="store_true", help="Print the allocated SparseGPTSlice sparsity range for every pruned sublayer.")
+    parser.add_argument("--globalmask_verbose", action="store_true", help="Print every GlobalMask block's reordered first column, pruning budget, and sparsity.")
     parser.add_argument("--slice_reorder_threshold", type=float, default=0.5, help="Minimum relative Wanda slice-priority range required to activate slice reordering.")
     parser.add_argument("--slice_reorder_verbose", action="store_true", help="Print SparseGPTSliceReorder allocation and ordering statistics for every pruned sublayer.")
     parser.add_argument("--rose_hessian_blocksize", type=int, default=128, help="Column block size used by ROSEHessian ordering and compensation.")
