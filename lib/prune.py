@@ -6,6 +6,7 @@ from .prune_zoo.dsnot import DSnoT
 from .prune_zoo.sparsegpt import SparseGPT
 from .prune_zoo.sparsegpt_slice import SparseGPTSlice
 from .prune_zoo.sparsegpt_slice_reorder import SparseGPTSliceReorder
+from .prune_zoo.sparsegpt_globalmask_reorder import SparseGPTGlobalMaskReorder
 from .prune_zoo.rose_slice import ROSESlice
 from .prune_zoo.rose import ROSE
 from .prune_zoo.rose_dynamic import ROSEDynamic
@@ -282,6 +283,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         "online_slicegpt",
         "robust_slicegpt",
         "cluster_sparsegpt",
+        "sparsegpt_globalmask_reorder",
     ]:
         prune_fn = prune_sparsegpt_slice
     elif args.prune_method == "rose_hessian":
@@ -373,6 +375,12 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     max_sparsity=args.slice_max_ratio,
                     allocation_step=args.slice_step_ratio,
                     cluster_threshold=args.cluster_reorder_threshold,
+                    verbose=args.slice_verbose,
+                )
+            elif args.prune_method == "sparsegpt_globalmask_reorder":
+                wrapped_layers[name] = SparseGPTGlobalMaskReorder(
+                    subset[name],
+                    slice_size=args.slice_size,
                     verbose=args.slice_verbose,
                 )
             elif args.prune_method in [

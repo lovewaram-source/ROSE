@@ -14,6 +14,7 @@ from lib.prune_zoo.lookahead_rose import LookaheadROSE
 from lib.prune_zoo.low_rank_ca_rose import LowRankCAROSE
 from lib.prune_zoo.online_slicegpt import OnlineSliceGPT
 from lib.prune_zoo.robust_slicegpt import RobustSliceGPT
+from lib.prune_zoo.sparsegpt_globalmask_reorder import SparseGPTGlobalMaskReorder
 from lib.prune_zoo.rose_dynamic import ROSEDynamic
 
 
@@ -61,6 +62,7 @@ class ExperimentalPrunerTests(unittest.TestCase):
                 },
             ),
             (LowRankCAROSE, {"blocksize": 4, "interval": 2, "rank": 4}),
+            (SparseGPTGlobalMaskReorder, {"slice_size": 4}),
         ]
         for pruner_type, kwargs in configurations:
             with self.subTest(pruner=pruner_type.__name__):
@@ -87,6 +89,13 @@ class ExperimentalPrunerTests(unittest.TestCase):
             (first_layer.weight == 0).sum() + (second_layer.weight == 0).sum()
         )
         self.assertEqual(actual, target)
+
+    def test_global_mask_reorder_derives_exact_block_budgets(self):
+        layer, pruner = calibrated(SparseGPTGlobalMaskReorder, slice_size=4)
+        pruner.fasterprune(0.5, blocksize=4)
+        self.assertEqual(sum(pruner.last_block_budgets), layer.weight.numel() // 2)
+        self.assertEqual(len(pruner.last_column_permutation), layer.in_features)
+        self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
     def test_dynamic_nm_preserves_every_physical_group(self):
         layer, pruner = calibrated(
             DynamicNM, blocksize=8, interval=1, reorder_threshold=0.25

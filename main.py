@@ -136,6 +136,8 @@ def format_method_label(args):
         )
     if method in {"sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean"}:
         params.append(f"t{args.slice_reorder_threshold:.2f}")
+    elif method == "sparsegpt_globalmask_reorder":
+        params.extend([f"b{args.slice_size}", "globalmask"])
     elif method == "ca_sparsegpt_slice":
         params.extend([f"i{args.ca_slice_interval}", f"t{args.ca_rose_reorder_threshold:.2f}"])
     elif method == "robust_slicegpt":
@@ -173,7 +175,7 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "rose_slice", "ca_sparsegpt_slice", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt", "global_budget_gpt", "dynamic_nm", "dsnot", "rose", "rose_dynamic", "ca_rose", "lookahead_rose", "low_rank_ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "sparsegpt_globalmask_reorder", "rose_slice", "ca_sparsegpt_slice", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt", "global_budget_gpt", "dynamic_nm", "dsnot", "rose", "rose_dynamic", "ca_rose", "lookahead_rose", "low_rank_ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
     parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
     parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
@@ -233,7 +235,7 @@ def main():
 
     if not 0.0 <= args.sparsity_ratio < 1.0:
         parser.error("--sparsity_ratio must satisfy 0 <= value < 1")
-    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "ca_sparsegpt_slice", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt"]:
+    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "sparsegpt_globalmask_reorder", "ca_sparsegpt_slice", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt"]:
         if args.sparsity_type != "unstructured":
             parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
         if args.slice_size <= 0:
