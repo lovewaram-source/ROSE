@@ -17,15 +17,13 @@ class SparseGPTGlobalMaskReorder(SparseGPT):
     within-block mask is recomputed during SparseGPT compensation.
     """
 
-    def __init__(self, layer, slice_size=128, verbose=False, block_verbose=False):
+    def __init__(self, layer, slice_size=128, verbose=False):
         super().__init__(layer)
         self.slice_size = slice_size
         self.verbose = verbose
-        self.block_verbose = block_verbose
         self.last_block_budgets = None
         self.last_block_sparsities = None
         self.last_column_permutation = None
-        self.last_block_first_columns = None
 
     @staticmethod
     def _bottomk_mask(score, k):
@@ -95,12 +93,10 @@ class SparseGPTGlobalMaskReorder(SparseGPT):
 
         block_budgets = []
         block_widths = []
-        block_first_columns = []
         for i1 in range(0, self.columns, blocksize):
             i2 = min(i1 + blocksize, self.columns)
             block_budgets.append(int(predicted_mask[:, i1:i2].sum().item()))
             block_widths.append(i2 - i1)
-            block_first_columns.append(int(permutation[i1].item()))
 
         if sum(block_budgets) != target_k:
             raise RuntimeError("Global predicted mask does not match target pruning budget")
@@ -110,7 +106,6 @@ class SparseGPTGlobalMaskReorder(SparseGPT):
             budget / (self.rows * width)
             for budget, width in zip(block_budgets, block_widths)
         ]
-        self.last_block_first_columns = block_first_columns
 
         for block_index, (i1, width, block_k) in enumerate(
             zip(range(0, self.columns, blocksize), block_widths, block_budgets)
@@ -162,16 +157,3 @@ class SparseGPTGlobalMaskReorder(SparseGPT):
                 f"blocks={len(ratios)} blocksize={blocksize} "
                 f"time={time.perf_counter() - tick:.2f}s"
             )
-        if self.block_verbose:
-            for block_id, (first_column, budget, ratio) in enumerate(
-                zip(
-                    self.last_block_first_columns,
-                    self.last_block_budgets,
-                    self.last_block_sparsities,
-                )
-            ):
-                print(
-                    "GlobalMaskBlock "
-                    f"order={block_id} first_column={first_column} "
-                    f"budget={budget} sparsity={ratio:.6f}"
-                )

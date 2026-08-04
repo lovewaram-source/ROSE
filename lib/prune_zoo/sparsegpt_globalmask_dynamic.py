@@ -83,13 +83,6 @@ class SparseGPTGlobalMaskDynamic(SparseGPTGlobalMaskReorder):
             round_budgets.append(block_k)
             round_sparsities.append(block_ratio)
             round_first_columns.append(int(remaining_columns[0].item()))
-            if self.block_verbose:
-                print(
-                    "GlobalMaskDynamicBlock "
-                    f"round={len(round_budgets)} "
-                    f"first_column={round_first_columns[-1]} "
-                    f"budget={block_k} sparsity={block_ratio:.6f}"
-                )
 
             W1 = W_state[:, :width].clone()
             Q1 = torch.zeros_like(W1)

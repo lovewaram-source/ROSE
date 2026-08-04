@@ -384,14 +384,12 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     subset[name],
                     slice_size=args.slice_size,
                     verbose=args.slice_verbose,
-                    block_verbose=args.globalmask_verbose,
                 )
             elif args.prune_method == "sparsegpt_globalmask_dynamic":
                 wrapped_layers[name] = SparseGPTGlobalMaskDynamic(
                     subset[name],
                     slice_size=args.slice_size,
                     verbose=args.slice_verbose,
-                    block_verbose=args.globalmask_verbose,
                 )
             elif args.prune_method in [
                 "sparsegpt_slice_reorder_total",
