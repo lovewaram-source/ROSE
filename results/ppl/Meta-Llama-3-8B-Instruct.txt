@@ -23,3 +23,7 @@ wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | rose            | 293.5240 |  
 wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | rose_hessian    | 318.0439 |       395.97
 wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | rose_bottomk    |  11.4914 |       406.84
 wikitext2 | Meta-Llama-3-8B-Instruct | 60.0%    | rose_bottomk    |  17.4255 |       400.85
+wikitext2 | Meta-Llama-3-8B-Instruct | 70.0%    | rose_bottomk    |  45.5200 |       404.69
+wikitext2 | Meta-Llama-3-8B-Instruct | 80.0%    | rose_bottomk    | 150.8673 |       404.23
+wikitext2 | Meta-Llama-3-8B-Instruct | 85.0%    | rose_bottomk    | 289.7107 |       405.57
+wikitext2 | Meta-Llama-3-8B-Instruct | 50.0%    | rose_slice      |  11.5880 |       397.82
