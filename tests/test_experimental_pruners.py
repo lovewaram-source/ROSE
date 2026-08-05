@@ -2,6 +2,7 @@ import unittest
 import torch
 
 from lib.prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
+from lib.prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
 from lib.prune_zoo.ca_rose import CAROSE
 from lib.prune_zoo.cluster_sparsegpt import ClusterSparseGPT
 from lib.prune_zoo.dynamic_nm import DynamicNM
@@ -33,6 +34,7 @@ class ExperimentalPrunerTests(unittest.TestCase):
     def test_unstructured_experimental_pruner_exact_budget(self):
         configurations = [
             (CASparseGPTSlice, {"slice_size": 4, "interval": 2}),
+            (CASparseGPTGlobalMin, {"slice_size": 4, "interval": 2}),
             (
                 CAROSE,
                 {"blocksize": 4, "interval": 2, "reorder_threshold": 0.25},
@@ -97,6 +99,24 @@ class ExperimentalPrunerTests(unittest.TestCase):
         pruner.fasterprune(0.5, blocksize=4)
         self.assertEqual(sum(pruner.last_block_budgets), layer.weight.numel() // 2)
         self.assertEqual(len(pruner.last_column_permutation), layer.in_features)
+        self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
+
+    def test_ca_globalmin_uses_physical_slices_and_exact_budget(self):
+        layer, pruner = calibrated(
+            CASparseGPTGlobalMin, slice_size=4, interval=2
+        )
+        pruner.fasterprune(0.5, blocksize=4)
+        self.assertEqual(
+            pruner.last_auto_min_sparsity,
+            min(pruner.last_predicted_mask_sparsities),
+        )
+        self.assertEqual(sum(pruner.last_slice_budgets), layer.weight.numel() // 2)
+        self.assertTrue(
+            all(
+                ratio >= pruner.last_auto_min_sparsity
+                for ratio in pruner.last_slice_sparsities
+            )
+        )
         self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
 
     def test_dynamic_global_mask_reorders_every_block(self):
