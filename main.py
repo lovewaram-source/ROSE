@@ -110,6 +110,7 @@ def format_method_label(args):
         "sparsegpt_slice",
         "rose_slice",
         "ca_sparsegpt_slice",
+        "ca_sparsegpt_auto_range",
         "ca_sparsegpt_consistent",
         "online_slicegpt",
         "robust_slicegpt",
@@ -164,6 +165,16 @@ def format_method_label(args):
         )
     elif method == "ca_sparsegpt_slice":
         params.extend([f"i{args.ca_slice_interval}", f"t{args.ca_rose_reorder_threshold:.2f}"])
+    elif method == "ca_sparsegpt_auto_range":
+        params.extend(
+            [
+                "autorange",
+                "minpred",
+                f"cap{args.dynamic_range_safety_cap:.2f}",
+                f"i{args.ca_slice_interval}",
+                f"t{args.ca_rose_reorder_threshold:.2f}",
+            ]
+        )
     elif method == "ca_sparsegpt_consistent":
         params.extend(
             [
@@ -208,7 +219,7 @@ def main():
     
     parser.add_argument('--sparsity_ratio', type=float, default=0.7, help='Target sparsity ratio.')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"], help='Type of sparsity pattern: unstructured or structured')
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "sparsegpt_globalmask_reorder", "sparsegpt_globalmask_dynamic", "rose_slice", "ca_sparsegpt_slice", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt", "global_budget_gpt", "dynamic_nm", "dsnot", "rose", "rose_dynamic", "ca_rose", "lookahead_rose", "low_rank_ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
+    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "sparsegpt_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "sparsegpt_globalmask_reorder", "sparsegpt_globalmask_dynamic", "rose_slice", "ca_sparsegpt_slice", "ca_sparsegpt_auto_range", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt", "global_budget_gpt", "dynamic_nm", "dsnot", "rose", "rose_dynamic", "ca_rose", "lookahead_rose", "low_rank_ca_rose", "rose_bottomk", "rose_hessian", "dense"], help="Pruning method to apply.")
     parser.add_argument("--slice_size", type=int, default=128, help="Number of consecutive input columns in each SparseGPTSlice slice.")
     parser.add_argument("--slice_min_ratio", type=float, default=None, help="Minimum sparsity of each slice. Defaults to target sparsity minus 0.15.")
     parser.add_argument("--slice_max_ratio", type=float, default=None, help="Maximum sparsity of each slice. Defaults to target sparsity plus 0.15.")
@@ -232,6 +243,7 @@ def main():
     parser.add_argument("--ca_rose_reorder_threshold", type=float, default=0.0, help="Minimum relative CA-ROSE loss range required to activate block and column reordering.")
     parser.add_argument("--ca_rose_verbose", action="store_true", help="Print CA-ROSE residual-loss, sparsity, and timing statistics.")
     parser.add_argument("--ca_slice_interval", type=int, default=4, help="Slices committed per CA-SparseGPT-Slice re-ranking round.")
+    parser.add_argument("--dynamic_range_safety_cap", type=float, default=0.95, help="Strict maximum slice sparsity allowed by CA auto-range; its lower bound is the minimum global-mask predicted slice sparsity.")
     parser.add_argument("--allca_greedy_steps", type=int, default=2, help="Chunked greedy updates used to approximate each All-CA pruning mask.")
     parser.add_argument("--robust_groups", type=int, default=4, help="Calibration groups used to estimate Robust-SliceGPT score uncertainty.")
     parser.add_argument("--robust_uncertainty_weight", type=float, default=0.5, help="Weight of cross-group score standard deviation in Robust-SliceGPT.")
@@ -270,7 +282,7 @@ def main():
 
     if not 0.0 <= args.sparsity_ratio < 1.0:
         parser.error("--sparsity_ratio must satisfy 0 <= value < 1")
-    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "sparsegpt_globalmask_reorder", "sparsegpt_globalmask_dynamic", "ca_sparsegpt_slice", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt"]:
+    if args.prune_method in ["sparsegpt_slice", "rose_slice", "sparsegpt_slice_reorder_total", "sparsegpt_slice_reorder_mean", "sparsegpt_globalmask_reorder", "sparsegpt_globalmask_dynamic", "ca_sparsegpt_slice", "ca_sparsegpt_auto_range", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca", "online_slicegpt", "robust_slicegpt", "cluster_sparsegpt"]:
         if args.sparsity_type != "unstructured":
             parser.error(f"{args.prune_method} currently supports only unstructured sparsity")
         if args.slice_size <= 0:
@@ -278,7 +290,7 @@ def main():
         if not 0.0 < args.slice_step_ratio <= 1.0:
             parser.error("--slice_step_ratio must satisfy 0 < value <= 1")
 
-        if args.prune_method not in ["ca_sparsegpt_globalmin", "ca_sparsegpt_allca"]:
+        if args.prune_method not in ["ca_sparsegpt_globalmin", "ca_sparsegpt_allca", "ca_sparsegpt_auto_range"]:
             effective_min = (
                 max(0.0, args.sparsity_ratio - 0.15)
                 if args.slice_min_ratio is None
@@ -300,9 +312,14 @@ def main():
             parser.error(
                 "--slice_reorder_threshold must satisfy 0 <= value <= 1"
             )
-        if args.prune_method in ["ca_sparsegpt_slice", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca"] and args.ca_slice_interval <= 0:
+        if args.prune_method == "ca_sparsegpt_auto_range":
+            if args.slice_min_ratio is not None or args.slice_max_ratio is not None:
+                parser.error("ca_sparsegpt_auto_range derives slice bounds automatically; omit --slice_min_ratio and --slice_max_ratio")
+            if not args.sparsity_ratio <= args.dynamic_range_safety_cap <= 1.0:
+                parser.error("--dynamic_range_safety_cap must be between --sparsity_ratio and 1")
+        if args.prune_method in ["ca_sparsegpt_slice", "ca_sparsegpt_auto_range", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca"] and args.ca_slice_interval <= 0:
             parser.error("--ca_slice_interval must be a positive integer")
-        if args.prune_method in ["ca_sparsegpt_slice", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca"] and not 0.0 <= args.ca_rose_reorder_threshold <= 1.0:
+        if args.prune_method in ["ca_sparsegpt_slice", "ca_sparsegpt_auto_range", "ca_sparsegpt_consistent", "ca_sparsegpt_globalmin", "ca_sparsegpt_allca"] and not 0.0 <= args.ca_rose_reorder_threshold <= 1.0:
             parser.error("--ca_rose_reorder_threshold must satisfy 0 <= value <= 1")
         if args.prune_method == "ca_sparsegpt_allca" and args.allca_greedy_steps <= 0:
             parser.error("--allca_greedy_steps must be a positive integer")
