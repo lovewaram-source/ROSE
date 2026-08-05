@@ -3,6 +3,7 @@ import torch
 
 from lib.prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
 from lib.prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
+from lib.prune_zoo.ca_sparsegpt_allca import CASparseGPTAllCA
 from lib.prune_zoo.ca_rose import CAROSE
 from lib.prune_zoo.cluster_sparsegpt import ClusterSparseGPT
 from lib.prune_zoo.dynamic_nm import DynamicNM
@@ -35,6 +36,10 @@ class ExperimentalPrunerTests(unittest.TestCase):
         configurations = [
             (CASparseGPTSlice, {"slice_size": 4, "interval": 2}),
             (CASparseGPTGlobalMin, {"slice_size": 4, "interval": 2}),
+            (
+                CASparseGPTAllCA,
+                {"slice_size": 4, "interval": 2, "greedy_steps": 2},
+            ),
             (
                 CAROSE,
                 {"blocksize": 4, "interval": 2, "reorder_threshold": 0.25},
@@ -118,6 +123,19 @@ class ExperimentalPrunerTests(unittest.TestCase):
             )
         )
         self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
+
+    def test_allca_uses_one_metric_and_exact_budget(self):
+        layer, pruner = calibrated(
+            CASparseGPTAllCA,
+            slice_size=4,
+            interval=2,
+            greedy_steps=2,
+        )
+        target = int(round(layer.weight.numel() * 0.85))
+        pruner.fasterprune(0.85, blocksize=4)
+        self.assertEqual(pruner.greedy_steps, 2)
+        self.assertEqual(sum(pruner.last_slice_budgets), target)
+        self.assertEqual(int((layer.weight == 0).sum()), target)
 
     def test_dynamic_global_mask_reorders_every_block(self):
         layer, pruner = calibrated(SparseGPTGlobalMaskDynamic, slice_size=4)

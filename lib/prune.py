@@ -14,6 +14,7 @@ from .prune_zoo.rose_dynamic import ROSEDynamic
 from .prune_zoo.ca_rose import CAROSE
 from .prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
 from .prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
+from .prune_zoo.ca_sparsegpt_allca import CASparseGPTAllCA
 from .prune_zoo.online_slicegpt import OnlineSliceGPT
 from .prune_zoo.robust_slicegpt import RobustSliceGPT
 from .prune_zoo.cluster_sparsegpt import ClusterSparseGPT
@@ -283,6 +284,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         "sparsegpt_slice_reorder_mean",
         "ca_sparsegpt_slice",
         "ca_sparsegpt_globalmin",
+        "ca_sparsegpt_allca",
         "online_slicegpt",
         "robust_slicegpt",
         "cluster_sparsegpt",
@@ -358,6 +360,17 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                     allocation_step=args.slice_step_ratio,
                     interval=args.ca_slice_interval,
                     reorder_threshold=args.ca_rose_reorder_threshold,
+                    verbose=args.slice_verbose,
+                    block_verbose=args.globalmask_verbose,
+                )
+            elif args.prune_method == "ca_sparsegpt_allca":
+                wrapped_layers[name] = CASparseGPTAllCA(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    allocation_step=args.slice_step_ratio,
+                    interval=args.ca_slice_interval,
+                    reorder_threshold=args.ca_rose_reorder_threshold,
+                    greedy_steps=args.allca_greedy_steps,
                     verbose=args.slice_verbose,
                     block_verbose=args.globalmask_verbose,
                 )
