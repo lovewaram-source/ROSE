@@ -13,6 +13,7 @@ from .prune_zoo.rose import ROSE
 from .prune_zoo.rose_dynamic import ROSEDynamic
 from .prune_zoo.ca_rose import CAROSE
 from .prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
+from .prune_zoo.ca_sparsegpt_consistent import CASparseGPTConsistent
 from .prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
 from .prune_zoo.ca_sparsegpt_allca import CASparseGPTAllCA
 from .prune_zoo.online_slicegpt import OnlineSliceGPT
@@ -283,6 +284,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         "sparsegpt_slice_reorder_total",
         "sparsegpt_slice_reorder_mean",
         "ca_sparsegpt_slice",
+        "ca_sparsegpt_consistent",
         "ca_sparsegpt_globalmin",
         "ca_sparsegpt_allca",
         "online_slicegpt",
@@ -344,6 +346,17 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 )
             elif args.prune_method == "ca_sparsegpt_slice":
                 wrapped_layers[name] = CASparseGPTSlice(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    min_sparsity=args.slice_min_ratio,
+                    max_sparsity=args.slice_max_ratio,
+                    allocation_step=args.slice_step_ratio,
+                    interval=args.ca_slice_interval,
+                    reorder_threshold=args.ca_rose_reorder_threshold,
+                    verbose=args.slice_verbose,
+                )
+            elif args.prune_method == "ca_sparsegpt_consistent":
+                wrapped_layers[name] = CASparseGPTConsistent(
                     subset[name],
                     slice_size=args.slice_size,
                     min_sparsity=args.slice_min_ratio,

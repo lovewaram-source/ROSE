@@ -2,6 +2,7 @@ import unittest
 import torch
 
 from lib.prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
+from lib.prune_zoo.ca_sparsegpt_consistent import CASparseGPTConsistent
 from lib.prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
 from lib.prune_zoo.ca_sparsegpt_allca import CASparseGPTAllCA
 from lib.prune_zoo.ca_rose import CAROSE
@@ -35,6 +36,7 @@ class ExperimentalPrunerTests(unittest.TestCase):
     def test_unstructured_experimental_pruner_exact_budget(self):
         configurations = [
             (CASparseGPTSlice, {"slice_size": 4, "interval": 2}),
+            (CASparseGPTConsistent, {"slice_size": 4, "interval": 2}),
             (CASparseGPTGlobalMin, {"slice_size": 4, "interval": 2}),
             (
                 CASparseGPTAllCA,
@@ -122,6 +124,14 @@ class ExperimentalPrunerTests(unittest.TestCase):
                 for ratio in pruner.last_slice_sparsities
             )
         )
+        self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
+
+    def test_consistent_ca_uses_sparsegpt_candidate_metric(self):
+        layer, pruner = calibrated(
+            CASparseGPTConsistent, slice_size=4, interval=1
+        )
+        pruner.fasterprune(0.5, blocksize=4)
+        self.assertEqual(pruner.last_candidate_metric, "sparsegpt")
         self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
 
     def test_allca_uses_one_metric_and_exact_budget(self):
