@@ -124,6 +124,17 @@ class CAROSE(ROSEDynamic):
             )
         return groups, target_k
 
+    def _refresh_remaining_groups(
+        self, W, H_inverse, groups, remaining_target_k, round_index
+    ):
+        """Optionally refresh budgets for groups that have not been processed.
+
+        Base CA-ROSE keeps the initial budgets.  Budget-adaptive subclasses
+        override this hook after each compensation round.
+        """
+        del W, H_inverse, remaining_target_k, round_index
+        return groups
+
     def _initial_inverse(self, H):
         return torch.cholesky_inverse(torch.linalg.cholesky(H))
 
@@ -174,10 +185,21 @@ class CAROSE(ROSEDynamic):
         W_result = torch.zeros_like(W)
         remaining_groups = groups
         processed_group_ids = []
+        committed_k = 0
         rounds = 0
 
         while remaining_groups:
             rounds += 1
+            remaining_target_k = target_k - committed_k
+            remaining_groups = self._refresh_remaining_groups(
+                W_state,
+                H_inverse,
+                remaining_groups,
+                remaining_target_k,
+                rounds,
+            )
+            if sum(group["budget"] for group in remaining_groups) != remaining_target_k:
+                raise RuntimeError("CA-ROSE remaining group budgets do not match target")
             current_columns = torch.cat(
                 [group["indices"] for group in remaining_groups]
             )
@@ -238,6 +260,7 @@ class CAROSE(ROSEDynamic):
 
             W_result[:, selected_columns] = finalized
             processed_group_ids.extend(group["id"] for group in selected_groups)
+            committed_k += sum(group["budget"] for group in selected_groups)
 
             if next_remaining_groups:
                 W_state[:, remaining_columns] = W_round[:, selected_width:]

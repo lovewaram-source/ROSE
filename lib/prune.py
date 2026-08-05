@@ -14,6 +14,7 @@ from .prune_zoo.rose_dynamic import ROSEDynamic
 from .prune_zoo.ca_rose import CAROSE
 from .prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
 from .prune_zoo.ca_sparsegpt_auto_range import CASparseGPTAutoRange
+from .prune_zoo.ca_sparsegpt_auto_range_online import CASparseGPTAutoRangeOnline
 from .prune_zoo.ca_sparsegpt_consistent import CASparseGPTConsistent
 from .prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
 from .prune_zoo.ca_sparsegpt_allca import CASparseGPTAllCA
@@ -286,6 +287,7 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
         "sparsegpt_slice_reorder_mean",
         "ca_sparsegpt_slice",
         "ca_sparsegpt_auto_range",
+        "ca_sparsegpt_auto_range_online",
         "ca_sparsegpt_consistent",
         "ca_sparsegpt_globalmin",
         "ca_sparsegpt_allca",
@@ -359,6 +361,17 @@ def prune_model(args, model, tokenizer, device=torch.device("cuda"), prune_n=0, 
                 )
             elif args.prune_method == "ca_sparsegpt_auto_range":
                 wrapped_layers[name] = CASparseGPTAutoRange(
+                    subset[name],
+                    slice_size=args.slice_size,
+                    allocation_step=args.slice_step_ratio,
+                    interval=args.ca_slice_interval,
+                    reorder_threshold=args.ca_rose_reorder_threshold,
+                    safety_cap=args.dynamic_range_safety_cap,
+                    verbose=args.slice_verbose,
+                    block_verbose=args.globalmask_verbose,
+                )
+            elif args.prune_method == "ca_sparsegpt_auto_range_online":
+                wrapped_layers[name] = CASparseGPTAutoRangeOnline(
                     subset[name],
                     slice_size=args.slice_size,
                     allocation_step=args.slice_step_ratio,

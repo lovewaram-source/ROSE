@@ -3,6 +3,7 @@ import torch
 
 from lib.prune_zoo.ca_sparsegpt_slice import CASparseGPTSlice
 from lib.prune_zoo.ca_sparsegpt_auto_range import CASparseGPTAutoRange
+from lib.prune_zoo.ca_sparsegpt_auto_range_online import CASparseGPTAutoRangeOnline
 from lib.prune_zoo.ca_sparsegpt_consistent import CASparseGPTConsistent
 from lib.prune_zoo.ca_sparsegpt_globalmin import CASparseGPTGlobalMin
 from lib.prune_zoo.ca_sparsegpt_allca import CASparseGPTAllCA
@@ -38,6 +39,7 @@ class ExperimentalPrunerTests(unittest.TestCase):
         configurations = [
             (CASparseGPTSlice, {"slice_size": 4, "interval": 2}),
             (CASparseGPTAutoRange, {"slice_size": 4, "interval": 2}),
+            (CASparseGPTAutoRangeOnline, {"slice_size": 4, "interval": 2}),
             (CASparseGPTConsistent, {"slice_size": 4, "interval": 2}),
             (CASparseGPTGlobalMin, {"slice_size": 4, "interval": 2}),
             (
@@ -147,6 +149,23 @@ class ExperimentalPrunerTests(unittest.TestCase):
         self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
         self.assertLessEqual(max(pruner.last_slice_sparsities), 0.75)
         self.assertLessEqual(pruner.last_auto_max_sparsity, 0.75)
+
+    def test_ca_auto_range_online_refreshes_remaining_budgets(self):
+        layer, pruner = calibrated(
+            CASparseGPTAutoRangeOnline,
+            slice_size=4,
+            interval=1,
+            safety_cap=0.75,
+        )
+        pruner.fasterprune(0.5, blocksize=4)
+        self.assertEqual(int((layer.weight == 0).sum()), layer.weight.numel() // 2)
+        self.assertEqual(len(pruner.last_budget_history), layer.in_features // 4)
+        self.assertTrue(
+            all(
+                entry["maximum"] <= 0.75
+                for entry in pruner.last_budget_history
+            )
+        )
 
     def test_allca_uses_one_metric_and_exact_budget(self):
         layer, pruner = calibrated(
